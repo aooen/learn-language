@@ -1,0 +1,14 @@
+services:
+  db:
+    image: mariadb:11.7
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: example
+      TZ: Asia/Seoul
+    volumes:
+      - db:/var/lib/mysql:Z
+
+volumes:
+  db:

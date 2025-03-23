@@ -1,0 +1,15 @@
+{
+  "name": "@learn-language/shared",
+  "type": "module",
+  "exports": {
+    "./types/*": "./src/types/*.ts",
+    "./utils/*": "./src/utils/*.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.4.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
