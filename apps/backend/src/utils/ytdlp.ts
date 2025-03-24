@@ -16,7 +16,28 @@ export const ytdlpName = (() => {
   }
 })();
 
-export async function prepareBinary() {
+export const ffmpegName = (() => {
+  switch (platform) {
+    case 'win32':
+      return 'ffmpeg.exe';
+    case 'darwin':
+    default:
+      return 'ffmpeg';
+  }
+})();
+
+export const ffmpegZipName = (() => {
+  switch (platform) {
+    case 'win32':
+      return 'ffmpeg-win32-x64';
+    case 'darwin':
+      return 'ffmpeg-darwin-x64';
+    default:
+      return 'ffmpeg-linux-x64';
+  }
+})();
+
+export async function prepareBinaries() {
   try {
     await access(vendorFolderName, constants.R_OK | constants.W_OK);
   } catch {
@@ -24,10 +45,19 @@ export async function prepareBinary() {
   }
 
   const files = await readdir(vendorFolderName);
-  if (!files.find((file) => file.startsWith('yt-dlp'))) {
+  if (!files.find((file) => file === ytdlpName)) {
     await Bun.write(
       path.join(vendorFolderName, ytdlpName),
       await fetch(`https://github.com/yt-dlp/yt-dlp/releases/latest/download/${ytdlpName}`),
+    );
+  }
+
+  if (!files.find((file) => file === ffmpegName)) {
+    await Bun.write(
+      path.join(vendorFolderName, ffmpegName),
+      await fetch(
+        `https://github.com/eugeneware/ffmpeg-static/releases/latest/download/${ffmpegZipName}`,
+      ),
     );
   }
 }

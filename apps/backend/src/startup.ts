@@ -1,3 +1,3 @@
-import { prepareBinary as prepareYtdlpBinary } from './utils/ytdlp';
+import { prepareBinaries as prepareYtdlpBinaries } from './utils/ytdlp';
 
-await prepareYtdlpBinary();
+await prepareYtdlpBinaries();
