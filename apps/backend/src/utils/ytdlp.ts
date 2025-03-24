@@ -1,5 +1,5 @@
 import { $ } from 'bun';
-import { access, constants, mkdir, readdir } from 'node:fs/promises';
+import { access, chmod, constants, mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { platform } from 'node:process';
 
@@ -46,24 +46,33 @@ export async function prepareBinaries() {
 
   const files = await readdir(vendorFolderName);
   if (!files.find((file) => file === ytdlpName)) {
-    await Bun.write(
-      path.join(vendorFolderName, ytdlpName),
-      await fetch(`https://github.com/yt-dlp/yt-dlp/releases/latest/download/${ytdlpName}`),
+    const ytdlpRes = await fetch(
+      `https://github.com/yt-dlp/yt-dlp/releases/latest/download/${ytdlpName}`,
     );
+    const ytdlpBlob = await ytdlpRes.blob();
+    const ytdlpFile = path.join(vendorFolderName, ytdlpName);
+    await Bun.write(ytdlpFile, await ytdlpBlob.arrayBuffer());
+    if (platform !== 'win32') {
+      await chmod(ytdlpFile, '777');
+    }
   }
 
   if (!files.find((file) => file === ffmpegName)) {
-    await Bun.write(
-      path.join(vendorFolderName, ffmpegName),
-      await fetch(
-        `https://github.com/eugeneware/ffmpeg-static/releases/latest/download/${ffmpegZipName}`,
-      ),
+    const ffmpegRes = await fetch(
+      `https://github.com/eugeneware/ffmpeg-static/releases/latest/download/${ffmpegZipName}`,
     );
+    const ffmpegBlob = await ffmpegRes.blob();
+    const ffmpegFile = path.join(vendorFolderName, ffmpegName);
+    await Bun.write(ffmpegFile, await ffmpegBlob.arrayBuffer());
+    if (platform !== 'win32') {
+      await chmod(ffmpegFile, '777');
+    }
   }
 }
 
 export async function getYoutubeSubtitle(locale: string, url: string) {
-  await $`${ytdlpName} --skip-download --write-sub --sub-lang ${locale} -o temp ${url}`
+  const prefix = platform === 'win32' ? '' : './';
+  await $`${prefix}${ytdlpName} --skip-download --write-sub --sub-lang ${locale} -o temp ${url}`
     .cwd(vendorFolderName)
     .quiet();
 
