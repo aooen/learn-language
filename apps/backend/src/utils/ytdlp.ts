@@ -71,10 +71,12 @@ export async function prepareBinaries() {
 }
 
 export async function getYoutubeSubtitle(locale: string, url: string) {
-  const prefix = platform === 'win32' ? '' : './';
-  await $`${prefix}${ytdlpName} --skip-download --write-sub --sub-lang ${locale} -o temp ${url}`
-    .cwd(vendorFolderName)
-    .quiet();
+  const ytdlpFile = path.join(vendorFolderName, ytdlpName);
+  const proc = Bun.spawn(
+    [ytdlpFile, '--skip-download', '--write-sub', '--sub-lang', locale, '-o', 'temp', url],
+    { cwd: vendorFolderName },
+  );
+  await proc.exited;
 
   const file = await Bun.file(path.join(vendorFolderName, `temp.${locale}.vtt`));
   return await file.text();
