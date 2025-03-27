@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArchiveOutlineIcon from 'virtual:icons/ion/archive-outline';
   import './index.css';
 
   let { children } = $props();
@@ -7,7 +8,7 @@
 <div class="wrapper">
   <nav class="nav">
     <div class="menu">
-      <ion-icon name="archive-outline"></ion-icon>
+      <ArchiveOutlineIcon class="icon" />
       <span class="tooltiptext">단어 수집</span>
     </div>
   </nav>
@@ -35,12 +36,9 @@
         display: flex;
         padding: 8px;
         border-radius: 5px;
+        font-size: 1.25rem;
         cursor: pointer;
         transition: 0.2s background;
-
-        ion-icon {
-          font-size: 1.25rem;
-        }
 
         .tooltiptext {
           position: absolute;

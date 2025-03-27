@@ -1,5 +1,6 @@
 <script lang="ts">
   import { client } from '$lib/utils/api';
+  import AddIcon from 'virtual:icons/ion/add';
 
   let url = $state('');
   let resultPromise = $state<Promise<string> | null>(null);
@@ -11,10 +12,14 @@
 </script>
 
 <div class="wrapper">
-  <div class="inputbar">
-    <input type="text" bind:value={url} />
-    <ion-icon name="add-circle" onclick={submitUrl}></ion-icon>
-  </div>
+  <form>
+    <div class="inputbar">
+      <input type="text" bind:value={url} />
+      <button onclick={submitUrl}>
+        <AddIcon class="icon" />
+      </button>
+    </div>
+  </form>
 
   {#await resultPromise}
     loading...
@@ -37,8 +42,9 @@
       display: flex;
       align-items: center;
       overflow: hidden;
-      width: 200px;
-      padding: 4px;
+      width: 100%;
+      max-width: 400px;
+      padding: 8px;
       border: 2px solid #ccc;
       border-radius: 999px;
 
@@ -46,10 +52,22 @@
         flex: 1;
         border: 0;
         background: none;
+        outline: none;
+        font-size: 1.05rem;
       }
 
-      ion-icon {
-        font-size: 1.25rem;
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 999px;
+        background-color: #f5f5f5;
+        color: #555;
+        font-size: 1.1rem;
         cursor: pointer;
       }
     }
