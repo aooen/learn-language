@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 
 import collect from './routes/collect';
 import user from './routes/user';
+import wordlist from './routes/wordlist';
 import type { Env } from './types/hono';
 
 import './startup.ts';
@@ -14,7 +15,8 @@ const app = new Hono<Env>()
     await next();
   })
   .route('/collect', collect)
-  .route('/user', user);
+  .route('/user', user)
+  .route('/wordlist', wordlist);
 
 export type AppType = typeof app;
 
