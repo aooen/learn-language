@@ -1,113 +1,107 @@
 <script lang="ts">
-  import { client } from '$lib/utils/api';
+  import { goto } from '$app/navigation';
+  import { authStore, login } from '$lib/stores/auth.svelte';
+  import { onMount } from 'svelte';
+  import './index.css';
 
-  let url = $state('');
-  let resultPromise = $state<Promise<string> | null>(null);
+  let username = $state('');
+  let password = $state('');
 
-  async function submitUrl() {
-    resultPromise = client.collect.$post({ json: { url } }).then((res) => res.text());
-    url = '';
+  onMount(() => {
+    if (authStore.jwt) {
+      // TODO: valid JWT인지 체크 추가
+      goto('/home');
+    }
+  });
+
+  async function submitLogin(e: Event) {
+    e.preventDefault();
+    try {
+      await login(username, password);
+      goto('/home');
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        alert(e.message);
+      }
+    }
   }
 </script>
 
 <div class="wrapper">
-  <h2>마음에 드는 글의 내용이나 링크를 넣어보세요</h2>
-  <form class="form">
-    <div class="inputbar">
-      <textarea bind:value={url} style:height={`${url.split('\n').length * 1.6}rem`}></textarea>
-      <div class="toolbar">
-        <button class="submit" onclick={submitUrl}>입력</button>
-      </div>
+  <h1>ll.me.kr</h1>
+  <h2>콘텐츠로 영어공부</h2>
+  <form on:submit={submitLogin} class="login-form">
+    <div class="form-group">
+      <label for="username">아이디</label>
+      <input id="username" type="text" bind:value={username} required />
     </div>
-  </form>
 
-  {#await resultPromise}
-    loading...
-  {:then result}
-    {#if result}
-      <textarea class="result">{result}</textarea>
-    {/if}
-  {/await}
+    <div class="form-group">
+      <label for="password">비밀번호</label>
+      <input id="password" type="password" bind:value={password} required />
+    </div>
+
+    <button type="submit" class="login-button">로그인</button>
+  </form>
 </div>
 
 <style lang="scss">
   .wrapper {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
     height: 100%;
 
-    .form {
-      display: flex;
-      justify-content: center;
-      width: 100%;
-      padding: 0 20px;
+    h1,
+    h2 {
+      text-align: center;
+      margin: 0;
+      font-weight: lighter;
     }
 
-    .inputbar {
+    h2 {
+      margin-top: 2px;
+      color: #333;
+      font-size: 1rem;
+    }
+
+    .login-form {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      width: 100%;
-      max-width: 768px;
-      padding: 12px 16px;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
-      background-color: #fff;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      gap: 15px;
+      max-width: 300px;
+      margin: 15px auto 0;
+    }
 
-      textarea {
-        width: 100%;
-        height: 3.2rem;
-        min-height: 3.2rem;
-        max-height: 16rem;
-        border: 0;
-        background: none;
-        color: #343541;
-        font-size: 1rem;
-        line-height: 1.6;
-        outline: none;
-        resize: none;
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      label {
+        font-weight: 500;
       }
 
-      .toolbar {
-        display: flex;
-        justify-content: flex-end;
-        width: 100%;
-
-        .submit {
-          padding: 6px 10px;
-          border: 0;
-          border-radius: 8px;
-          background-color: #111;
-          color: white;
-          cursor: pointer;
-          transition: background-color 0.2s;
-
-          &:hover {
-            background-color: #333;
-          }
-        }
+      input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
       }
     }
 
-    .result {
-      width: 100%;
-      max-width: 768px;
-      margin-top: 24px;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #e5e5e5;
-      background-color: #f7f7f8;
-      min-height: 150px;
-      font-family:
-        system-ui,
-        -apple-system,
-        sans-serif;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: #343541;
+    .login-button {
+      padding: 10px;
+      background-color: #4682b4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: darken(#4682b4, 10%);
+      }
     }
   }
 </style>
