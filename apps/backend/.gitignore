@@ -1,3 +1,8 @@
 # deps
 node_modules/
 vendors/
+
+# Env
+!.env
+.env.*.local
+.env.local

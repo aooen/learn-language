@@ -6,9 +6,21 @@ services:
       - 3306:3306
     environment:
       MARIADB_ROOT_PASSWORD: example
+      MARIADB_DATABASE: learn-language
       TZ: Asia/Seoul
     volumes:
       - db:/var/lib/mysql:Z
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: example
+    ports:
+      - "8080:80"
 
 volumes:
   db:
