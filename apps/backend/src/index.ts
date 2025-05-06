@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import collect from './routes/collect';
+import user from './routes/user';
 import type { Env } from './types/hono';
 
 import './startup.ts';
@@ -12,7 +13,8 @@ const app = new Hono<Env>()
     c.set('locale', 'en');
     await next();
   })
-  .route('/collect', collect);
+  .route('/collect', collect)
+  .route('/user', user);
 
 export type AppType = typeof app;
 
