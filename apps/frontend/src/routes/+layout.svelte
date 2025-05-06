@@ -21,11 +21,11 @@
 <style lang="scss">
   .wrapper {
     display: flex;
+    flex-direction: column;
     height: 100%;
 
     .nav {
       display: flex;
-      flex-direction: column;
       gap: 6px;
       padding: 4px;
       border-right: 1px solid #eee;
