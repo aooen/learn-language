@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { isJSDocAugmentsTag } from 'typescript';
   import Card from './Card.svelte';
   let queue = $state([
     {
@@ -26,6 +25,7 @@
 
   let flipped = $state(false);
   let tried = $state(false);
+  let done = $state(false);
   function flip() {
     flipped = !flipped;
     tried = true;
@@ -38,19 +38,22 @@
       // update progress
     }
     queue.shift();
+    if (queue.length == 0) {
+      done = true;
+      alert('All done! We are updating your progress.');
+    }
     tried = false;
   }
 
   $inspect(queue);
 </script>
 
-<div class="wrapper">
-  <div onclick={flip} class="cardEventBox">
-    <Card front={queue[0].front} back={queue[0].back} {flipped}></Card>
+{#if !done}
+  <div class="wrapper">
+    <div onclick={flip} class="cardEventBox">
+      <Card front={queue[0].front} back={queue[0].back} {flipped}></Card>
+    </div>
   </div>
-</div>
-
-{#if queue.length != 0}
   {#if tried}
     <div class="buttons">
       <button
