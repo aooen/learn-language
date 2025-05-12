@@ -1,4 +1,5 @@
 <script lang="ts">
+
   let { front, back, flipped } = $props();
 </script>
 
