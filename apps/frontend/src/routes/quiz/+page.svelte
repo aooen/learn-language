@@ -1,5 +1,8 @@
 <script lang="ts">
   import Card from './Card.svelte';
+  import { client } from '$lib/utils/api';
+  import { onMount } from 'svelte';
+    import { get } from 'svelte/store';
 
   type Quiz = {
   id: number;
@@ -127,59 +130,83 @@ class ButtonType {
   }
 }
 
+async function fetchQuizs(quizSetId :number) {
+  // const res = await fetch(import.meta.env.VITE_API_URL + `/quizSet/${quizSetId}`);
+  const res = await client.quizSet[':id'].$get({
+    param: {
+      id : '1',
+    }
+  })
+  const quizs = await res.json();
+
+  const typedQuizs = quizs.map(x => {
+    const newQuiz: Quiz = {
+      id : x.id,
+      front : x.front,
+      back : x.back,
+      progress : x.progress,
+      sentence_from : x.sentence_from,
+      due : x.due,
+    }
+    return newQuiz
+  })
+
+  return typedQuizs
+}
 
 
   // ============================ Sample ======================
- const sampleQuizzes: Quiz[] = [
-  {
-    id: 1,
-    front: "What is the capital of France?",
-    back: "Paris",
-    progress: 0.5,
-    sentence_from: "Geography textbook",
-    due: 0, // due in 1 min
-  },
-  {
-    id: 2,
-    front: "Who wrote 'Hamlet'?",
-    back: "William Shakespeare",
-    progress: 0.8,
-    sentence_from: "English Literature notes",
-    due: 0, // due in 30 sec
-  },
-  {
-    id: 3,
-    front: "What is the chemical symbol for water?",
-    back: "H₂O",
-    progress: 0.2,
-    sentence_from: "Chemistry handout",
-    due: 0, // due in 2 min
-  },
-  {
-    id: 4,
-    front: "Solve for x: 2x + 3 = 7",
-    back: "x = 2",
-    progress: 0.1,
-    sentence_from: "Algebra workbook",
-    due: 0, // due in 45 sec
-  },
-  {
-    id: 5,
-    front: "Translate 'ありがとう' to English",
-    back: "Thank you",
-    progress: 0.6,
-    sentence_from: "Japanese flashcards",
-    due: 0, // due in 1.5 min
-  },
-];
+//  const sampleQuizzes: Quiz[] =  fetchQuizs(1);
+//  [
+//   {
+//     id: 1,
+//     front: "What is the capital of France?",
+//     back: "Paris",
+//     progress: 0.5,
+//     sentence_from: "Geography textbook",
+//     due: 0, // due in 1 min
+//   },
+//   {
+//     id: 2,
+//     front: "Who wrote 'Hamlet'?",
+//     back: "William Shakespeare",
+//     progress: 0.8,
+//     sentence_from: "English Literature notes",
+//     due: 0, // due in 30 sec
+//   },
+//   {
+//     id: 3,
+//     front: "What is the chemical symbol for water?",
+//     back: "H₂O",
+//     progress: 0.2,
+//     sentence_from: "Chemistry handout",
+//     due: 0, // due in 2 min
+//   },
+//   {
+//     id: 4,
+//     front: "Solve for x: 2x + 3 = 7",
+//     back: "x = 2",
+//     progress: 0.1,
+//     sentence_from: "Algebra workbook",
+//     due: 0, // due in 45 sec
+//   },
+//   {
+//     id: 5,
+//     front: "Translate 'ありがとう' to English",
+//     back: "Thank you",
+//     progress: 0.6,
+//     sentence_from: "Japanese flashcards",
+//     due: 0, // due in 1.5 min
+//   },
+// ];
 // ====================== Sample =======================
 
   const queue = new MinHeap();
   let retired = $state([]);
 
-  for (const quiz of sampleQuizzes) {
-    queue.push(quiz);
-  }
+  // for (const quiz of sampleQuizzes) {
+  //   queue.push(quiz);
+  // }
 
   let flipped = $state(false);
   let tried = $state(false);
@@ -209,21 +236,43 @@ class ButtonType {
       //done
       alert("done");
     }
-
+    client.quizSet[":id"].$put({
+      param : {
+        id : 1,
+      },
+      json: [...retired, ...queue.heap]
+    });
+    
     tried = false;
     flipped = false;
 
 
   }
 
-  // $inspect(queue.heap);
+  onMount(async() => {
+    let typedQuizs = await fetchQuizs(1);
+    for (const quiz of typedQuizs) {
+      queue.push(quiz);
+    }
+  })
+  // fetchQuizs(1).then((typedQuizs) => {
+  //   for (const quiz of typedQuizs) {
+  //     queue.push(quiz)
+  //   }
+  // })
+
+  $inspect(queue.heap);
   // $inspect(retired);
 </script>
 
 {#if !done}
   <div class="wrapper">
     <div onclick={flip} class="cardEventBox">
+      {#if queue.heap.length != 0}
       <Card front={queue.heap[0].front} back={queue.heap[0].back} {flipped}></Card>
+      {:else}
+      <Card front="Loading" back="Loading" {flipped}></Card>
+      {/if}
     </div>
   </div>
   {#if tried}
@@ -237,7 +286,7 @@ class ButtonType {
   </div>
   {/if}
 {:else}
-  <Card front="All Done!" back="We are updating your progress" {flipped}></Card>
+  <Card front="All Done!" back="We are updating your progress." {flipped}></Card>
 {/if}
 
 <style>

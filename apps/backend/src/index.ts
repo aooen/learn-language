@@ -6,6 +6,7 @@ import user from './routes/user';
 import wordlist from './routes/wordlist';
 import words from './routes/words';
 import mediaInfo from './routes/mediaInfo.ts';
+import quizSet from './routes/quizSet.ts';
 import type { Env } from './types/hono';
 
 import './startup.ts';
@@ -20,7 +21,8 @@ const app = new Hono<Env>()
   .route('/user', user)
   .route('/wordlist', wordlist)
   .route('/words', words)
-  .route('/mediaInfo', mediaInfo);
+  .route('/mediaInfo', mediaInfo)
+  .route('/quizSet', quizSet);
 
 export type AppType = typeof app;
 
