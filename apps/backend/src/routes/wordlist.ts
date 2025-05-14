@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types/hono.ts';
-import { db } from '../db/client.ts';
+import { db } from '~/utils/db';
 import { wordlist } from '../schemas/wordlist';
 import { eq, and } from 'drizzle-orm';
 
@@ -29,7 +29,9 @@ export default app
     const id = Number(c.req.param('id'));
     const userId = 1;
 
-    await db.delete(wordlist).where(and(eq(wordlist.id, id), eq(wordlist.userId, userId)));
+    const [{ affectedRows }] = await db
+      .delete(wordlist)
+      .where(and(eq(wordlist.id, id), eq(wordlist.userId, userId)));
 
-    return c.json({ success: true });
+    return c.json({ success: affectedRows > 0 });
   });
