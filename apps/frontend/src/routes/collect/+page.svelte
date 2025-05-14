@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { client } from '$lib/client';
 
   type Word = {
     id: number;
@@ -13,26 +14,23 @@
   let words: Word[] = [];
 
   onMount(async () => {
-    const res = await fetch('http://localhost:3000/collect');
-    words = (await res.json() as Word[]).map((w) => ({
+    const res = await client.words.$get();
+    const data = await res.json();
+    words = (data as Word[]).map((w) => ({
       ...w,
       selected: false,
     }));
   });
 
   async function deleteSelectedWords() {
-    const selectedIds = words.filter(w => w.selected).map(w => w.id);
+    const selectedIds = words.filter((w) => w.selected).map((w) => w.id);
     if (selectedIds.length === 0) return;
 
-    await fetch('http://localhost:3000/collect/delete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ ids: selectedIds }),
+    await client.words.delete.$post({
+      json: { ids: selectedIds },
     });
 
-    words = words.filter(w => !w.selected);
+    words = words.filter((w) => !w.selected);
   }
 </script>
 
@@ -52,13 +50,10 @@
       </tr>
     </thead>
     <tbody>
-      {#each words as word, i(word.id)}
+      {#each words as word, i (word.id)}
         <tr>
           <td>
-            <input 
-              type="checkbox"
-              bind:checked={words[i].selected}
-            />
+            <input type="checkbox" bind:checked={words[i].selected} />
           </td>
           <td>{word.id}</td>
           <td>{word.word}</td>
