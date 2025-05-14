@@ -5,6 +5,7 @@ import collect from './routes/collect';
 import user from './routes/user';
 import wordlist from './routes/wordlist';
 import words from './routes/words';
+import mediaInfo from './routes/mediaInfo.ts';
 import type { Env } from './types/hono';
 
 import './startup.ts';
@@ -18,7 +19,8 @@ const app = new Hono<Env>()
   .route('/collect', collect)
   .route('/user', user)
   .route('/wordlist', wordlist)
-  .route('/words', words);
+  .route('/words', words)
+  .route('/mediaInfo', mediaInfo);
 
 export type AppType = typeof app;
 

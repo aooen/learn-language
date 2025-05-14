@@ -4,7 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 
-import * as schemas from '~/schemas';
+import { users } from '~/schemas/users';
 import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
@@ -24,8 +24,8 @@ const app = new Hono<Env>()
       try {
         const [user] = await db
           .select()
-          .from(schemas.users)
-          .where(eq(schemas.users.username, data.username));
+          .from(users)
+          .where(eq(users.username, data.username));
         if (!user || !(await Bun.password.verify(data.password, user.password))) {
           throw new Error();
         }
@@ -59,8 +59,8 @@ const app = new Hono<Env>()
       const data = c.req.valid('json');
       const [alreadyExistUser] = await db
         .select()
-        .from(schemas.users)
-        .where(eq(schemas.users.username, data.username));
+        .from(users)
+        .where(eq(users.username, data.username));
       if (alreadyExistUser) {
         throw new HTTPException(404, { message: 'Already exists user' });
       }
@@ -69,7 +69,7 @@ const app = new Hono<Env>()
         algorithm: 'bcrypt',
         cost: 4,
       });
-      await db.insert(schemas.users).values({
+      await db.insert(users).values({
         username: data.username,
         password: bcryptHash,
         motherLang: data.motherLang,
@@ -77,8 +77,8 @@ const app = new Hono<Env>()
       });
       const [user] = await db
         .select()
-        .from(schemas.users)
-        .where(eq(schemas.users.username, data.username));
+        .from(users)
+        .where(eq(users.username, data.username));
       if (!user) {
         throw new HTTPException(500);
       }
