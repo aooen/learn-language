@@ -1,155 +1,128 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { client } from '$lib/utils/api';
 
-  // API로부터 받아오는 데이터 구조
-  type ApiWordEntry = {
+  type WordlistEntry = {
     id: number;
-    word: string;
-    meaning: string;
-    user_id: number;
+    title: string;
+    userId: number;
   };
 
-  // 실제 화면에서 사용하는 데이터 구조
-  type WordEntry = {
-    id: number;
-    word: string;
-    meaning: string;
-  };
-
-  let wordList: WordEntry[] = [];
+  let wordlists: WordlistEntry[] = [];
   let showInput = false;
-  let newWord = '';
-  let newMeaning = '';
+  let newTitle = '';
   let errorMsg = '';
 
-  // 단어 목록 불러오기
-  async function fetchWordList() {
+  // 단어장 목록 불러오기
+  async function fetchWordlists() {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/wordlist`);
-      if (res.ok) {
-        const data: ApiWordEntry[] = await res.json();
-        wordList = data.map(
-          (item): WordEntry => ({
-            id: item.id,
-            word: item.word,
-            meaning: item.meaning,
-          }),
-        );
+      const result = await client.wordlist.$get();
+      if (result.ok) {
+        wordlists = await result.json();
       } else {
-        console.error('단어 목록 불러오기 실패');
+        console.error('단어장 목록 불러오기 실패:', result.status, result.statusText);
+        errorMsg = '단어장 목록 불러오기 실패';
       }
     } catch (err) {
-      console.error('Fetch 오류:', err);
+      console.error('단어장 목록 불러오기 실패:', err);
+      errorMsg = '서버와 통신 중 오류 발생';
     }
   }
 
-  // 단어 추가
-  async function addWord() {
-    const trimmedWord = newWord.trim();
-    const trimmedMeaning = newMeaning.trim();
+  // 단어장 추가
+  async function addWordlist() {
+    const trimmed = newTitle.trim();
 
-    if (!trimmedWord || !trimmedMeaning) {
-      errorMsg = '단어와 뜻을 모두 입력해주세요.';
+    if (!trimmed) {
+      errorMsg = '단어장 이름을 입력해주세요.';
       return;
     }
 
-    const isDuplicate = wordList.some((entry) => entry.word === trimmedWord);
-    if (isDuplicate) {
-      errorMsg = `"${trimmedWord}"는 이미 존재하는 단어입니다.`;
+    const duplicate = wordlists.some((entry) => entry.title === trimmed);
+    if (duplicate) {
+      errorMsg = `"${trimmed}"은 이미 존재하는 단어장입니다.`;
       return;
     }
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/wordlist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        word: trimmedWord,
-        meaning: trimmedMeaning,
-      }),
-    });
+
+    const res = await client.wordlist.$post({ json: { title: trimmed } });
 
     if (res.ok) {
-      await fetchWordList(); // 목록 새로고침
-      newWord = '';
-      newMeaning = '';
+      await fetchWordlists();
+      newTitle = '';
       showInput = false;
       errorMsg = '';
     } else {
-      errorMsg = '단어 추가 실패';
+      errorMsg = '단어장 추가 실패';
     }
   }
 
-  // 단어 삭제
-  async function deleteWord(id: number) {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/wordlist/${id}`, {
-      method: 'DELETE',
-    });
+  // 단어장 삭제
+  async function deleteWordlist(id: number) {
+    const res = await client.wordlist[':id'].$delete({ param: { id: String(id) } });
 
     if (res.ok) {
-      await fetchWordList();
+      await fetchWordlists();
     } else {
-      console.error('단어 삭제 실패');
+      console.error('단어장 삭제 실패');
     }
   }
 
   function cancelInput() {
-    newWord = '';
-    newMeaning = '';
+    newTitle = '';
     showInput = false;
     errorMsg = '';
   }
 
-  // 페이지 진입 시 목록 불러오기
   onMount(() => {
-    fetchWordList();
+    fetchWordlists();
   });
 </script>
 
-<!-- 단어장 출력  -->
+<!-- 단어장 출력 -->
 <div class="container">
   <h2>📘 단어장</h2>
 
   <ul>
-    {#each wordList as entry (entry.id)}
+    {#each wordlists as entry (entry.id)}
       <li>
         <div class="entry">
-          <span><strong>{entry.word}</strong> : {entry.meaning}</span>
-          <button class="delete" on:click={() => deleteWord(entry.id)}>✖</button>
+          <span><strong>{entry.title}</strong></span>
+          <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
         </div>
       </li>
     {/each}
   </ul>
 
-  <button class="add-button" on:click={() => (showInput = true)}>+ 단어 추가</button>
+  <button class="add-button" onclick={() => (showInput = true)}>+ 단어장 추가</button>
 </div>
 
-<!-- 단어 추가 모달 -->
+<!-- 단어장 추가 모달 -->
 {#if showInput}
-  <button
+  <div
     class="overlay"
-    type="button"
-    on:click={cancelInput}
+    role="button"
+    onclick={cancelInput}
     aria-label="닫기 배경"
     tabindex="0"
-    on:keydown={(e) => {
+    onkeydown={(e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         cancelInput();
       }
     }}
-  ></button>
+  ></div>
 
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="modal" on:click|stopPropagation>
-    <h3>단어 추가</h3>
-    <input bind:value={newWord} placeholder="단어 입력 (예: apple)" />
-    <input bind:value={newMeaning} placeholder="뜻 입력 (예: 사과)" />
+  <div class="modal" onclick={(e) => e.stopPropagation()}>
+    <h3>단어장 추가</h3>
+    <input bind:value={newTitle} placeholder="단어장 이름 입력 (예: 토익 단어장)" />
     {#if errorMsg}
       <div class="error">{errorMsg}</div>
     {/if}
     <div class="button-group">
-      <button on:click={addWord}>완료</button>
-      <button class="cancel" on:click={cancelInput}>취소</button>
+      <button onclick={addWordlist}>완료</button>
+      <button class="cancel" onclick={cancelInput}>취소</button>
     </div>
   </div>
 {/if}
@@ -214,7 +187,7 @@
     cursor: pointer;
   }
 
-  button.overlay {
+  .overlay {
     all: unset;
     position: fixed;
     top: 0;
