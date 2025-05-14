@@ -6,7 +6,7 @@ import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteTy
 import { zValidator } from '~/utils/validator-wrapper';
 import { getYoutubeSubtitle } from '~/utils/ytdlp';
 import type { Env } from '~/types/hono';
-import { words } from '~/schemas';
+import { word } from '~/schemas/word';
 import { db } from '~/utils/db';
 import natural from 'natural';
 import { inArray } from 'drizzle-orm';
@@ -40,13 +40,14 @@ const app = new Hono<Env>().post(
       }
 
       await Promise.all(
-        Object.entries(stemCount).map(async ([word, count]) => {
+        Object.entries(stemCount).map(async ([stem, count]) => {
           try {
-            await db.insert(words).values({
-              word,
+            await db.insert(word).values({
+              word: stem,
               meaning: '',
               count,
-              level: 0,
+              frequency: 0,
+              wordlistId: 1,
             });
           } catch (e) {}
         }),
@@ -54,26 +55,6 @@ const app = new Hono<Env>().post(
       return c.json({ success: true, count: Object.keys(stemCount).length });
     }
     throw new HTTPException(400, { message: 'Invalid url' });
-  },
-);
-
-app.get('/', async (c) => {
-  const result = await db.select().from(words);
-  return c.json(result);
-});
-
-app.post(
-  '/delete',
-  zValidator(
-    'json',
-    z.object({
-      ids: z.array(z.number()),
-    }),
-  ),
-  async (c) => {
-    const { ids } = c.req.valid('json');
-    await db.delete(words).where(inArray(words.id, ids));
-    return c.json({ ok: true });
   },
 );
 

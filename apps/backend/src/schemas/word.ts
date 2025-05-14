@@ -1,9 +1,10 @@
 import { binary, char, int, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
 
-export const words = mysqlTable('words', {
+export const word = mysqlTable('word', {
   id: int().primaryKey().autoincrement(),
-  word: varchar({ length: 255 }).notNull().unique(),
+  word: varchar({ length: 255 }).notNull(),
   meaning: varchar({ length: 255 }).notNull(),
   count: int().notNull(),
-  level: int().notNull(),
+  frequency: int().notNull(),
+  wordlistId: int().notNull(),
 });
