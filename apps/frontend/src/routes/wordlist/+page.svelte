@@ -58,12 +58,24 @@
 
   // 단어장 삭제
   async function deleteWordlist(id: number) {
-    const res = await client.wordlist[':id'].$delete({ param: { id: String(id) } });
+    try {
+      const res = await client.wordlist[':id'].$delete({ param: { id: String(id) } });
 
-    if (res.ok) {
-      await fetchWordlists();
-    } else {
-      console.error('단어장 삭제 실패');
+      if (res.ok) {
+        const data = await res.json();
+
+        if (data.success) {
+          await fetchWordlists(); // 성공 시 목록 갱신
+        } else {
+          errorMsg = '존재하지 않는 단어장이거나 삭제 실패';
+        }
+      } else {
+        errorMsg = '서버 오류로 삭제 실패';
+        console.error('단어장 삭제 실패:', res.status, res.statusText);
+      }
+    } catch (err) {
+      errorMsg = '통신 중 오류 발생';
+      console.error('삭제 요청 실패:', err);
     }
   }
 
