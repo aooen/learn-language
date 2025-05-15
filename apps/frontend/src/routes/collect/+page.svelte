@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { client } from '$lib/client';
+  import { client } from '$lib/utils/api';
 
   type Word = {
     id: number;
@@ -50,14 +50,14 @@
       </tr>
     </thead>
     <tbody>
-      {#each words as word, i (word.id)}
+      {#each words as word (word.id)}
         <tr>
           <td>
-            <input type="checkbox" bind:checked={words[i].selected} />
+            <input type="checkbox" bind:checked={word.selected} />
           </td>
           <td>{word.id}</td>
           <td>{word.word}</td>
-          <td>{word.meaning || '의미 없음'}</td>
+          <td>{word.meaning}</td>
           <td>{word.count}</td>
           <td>{word.level}</td>
         </tr>
