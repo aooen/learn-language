@@ -30,7 +30,7 @@
 <div class="wrapper">
   <h1>ll.me.kr</h1>
   <h2>콘텐츠로 영어공부</h2>
-  <form on:submit={submitLogin} class="login-form">
+  <form onsubmit={submitLogin} class="login-form">
     <div class="form-group">
       <label for="username">아이디</label>
       <input id="username" type="text" bind:value={username} required />

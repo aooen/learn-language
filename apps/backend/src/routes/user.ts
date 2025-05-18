@@ -22,10 +22,7 @@ const app = new Hono<Env>()
     async (c) => {
       const data = c.req.valid('json');
       try {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.username, data.username));
+        const [user] = await db.select().from(users).where(eq(users.username, data.username));
         if (!user || !(await Bun.password.verify(data.password, user.password))) {
           throw new Error();
         }
@@ -75,10 +72,7 @@ const app = new Hono<Env>()
         motherLang: data.motherLang,
         targetLang: data.targetLang,
       });
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, data.username));
+      const [user] = await db.select().from(users).where(eq(users.username, data.username));
       if (!user) {
         throw new HTTPException(500);
       }
