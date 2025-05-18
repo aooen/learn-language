@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "99a0c9fd-da3c-4579-a707-229f41cccc72",
+  "id": "b3e155c4-6f6c-4976-bafd-515ccbbfb219",
   "prevId": "6188a38a-0991-4868-a364-80ea785d8df0",
   "tables": {
     "users": {
@@ -63,8 +63,8 @@
       },
       "checkConstraint": {}
     },
-    "words": {
-      "name": "words",
+    "word": {
+      "name": "word",
       "columns": {
         "id": {
           "name": "id",
@@ -94,8 +94,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "level": {
-          "name": "level",
+        "frequency": {
+          "name": "frequency",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "wordlistId": {
+          "name": "wordlistId",
           "type": "int",
           "primaryKey": false,
           "notNull": true,
@@ -105,21 +112,14 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "words_id": {
-          "name": "words_id",
+        "word_id": {
+          "name": "word_id",
           "columns": [
             "id"
           ]
         }
       },
-      "uniqueConstraints": {
-        "words_word_unique": {
-          "name": "words_word_unique",
-          "columns": [
-            "word"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "wordlist": {
