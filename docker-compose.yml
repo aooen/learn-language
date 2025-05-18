@@ -22,5 +22,14 @@ services:
     ports:
       - "8080:80"
 
+  app:
+    build: ./
+    restart: always
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    depends_on:
+      - db
+
 volumes:
   db:
