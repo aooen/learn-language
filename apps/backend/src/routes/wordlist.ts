@@ -4,9 +4,7 @@ import { db } from '~/utils/db';
 import { wordlist } from '../schemas/wordlist';
 import { eq, and } from 'drizzle-orm';
 
-const app = new Hono<Env>();
-
-export default app
+const app = new Hono<Env>()
   // 단어장 목록 조회
   .get('/', async (c) => {
     const userId = 1; // 임시 ID 설정
@@ -35,3 +33,5 @@ export default app
 
     return c.json({ success: affectedRows > 0 });
   });
+
+export default app;
