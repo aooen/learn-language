@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '~/utils/validator-wrapper';
-import { word } from '~/schemas';
+import { word } from '~/schemas/word';
 import { db } from '~/utils/db';
 import { inArray } from 'drizzle-orm';
 import type { Env } from '~/types/hono';
