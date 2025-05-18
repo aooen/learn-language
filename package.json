@@ -13,17 +13,12 @@
   ],
   "devDependencies": {
     "@types/bun": "latest",
-    "drizzle-kit": "^0.31.1",
-    "sass": "^1.86.0",
-    "tsx": "^4.19.4"
+    "sass": "^1.86.0"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "dotenv": "^16.5.0",
-    "drizzle-orm": "^0.43.1",
-    "mysql2": "^3.14.1",
     "zod": "^3.24.2"
   },
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
