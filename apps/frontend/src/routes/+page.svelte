@@ -1,107 +1,196 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { authStore, login } from '$lib/stores/auth.svelte';
   import { onMount } from 'svelte';
-  import './index.css';
+  import { client } from '$lib/utils/api';
 
-  let username = $state('');
-  let password = $state('');
+  let player: unknown;
 
+  /**
+   * 이부분에 단어장이나 퀴즈에서 호출 시 전달된 유튜브 videoID를 저장해주는 setter가 필요하다.
+   */
+  let videoId = $state('UKp2CrfmVfw'); 
+  let fullUrl = 
+    'https://www.youtube.com/watch?v=aKq8bkY5eTU&pp=ygUS66-47Iqk7YSw67mE7Iqk7Yq4';
+
+  const youtubeVideoID = 'youtube-player';
+
+  let showingSubtitleText = $state(''); //화면에 표시할 자막
+  let showingTimeLine = $state(''); //화면에 표시할 시간
+  let abstractedSubtitle = $state<Caption[]>([]);
+
+  type Caption = {
+    start: number;
+    end: number;
+    text: string;
+  };
+
+  //유튜브 가져오기
   onMount(() => {
-    if (authStore.jwt) {
-      // TODO: valid JWT인지 체크 추가
-      goto('/home');
+    function load() {
+      player = new YT.Player(youtubeVideoID, {
+        height: '500',
+        width: '800',
+        videoId: videoId,
+        playerVars: { autoplay: 0 },
+        events: {
+          onReady: handlePlayerReady
+        },
+      });
     }
-  });
 
-  async function submitLogin(e: Event) {
-    e.preventDefault();
+    if (window.YT) {
+      load();
+    } else {
+      window.onYouTubeIframeAPIReady = load;
+    }
+  });  
+    //자막 가져오기기
+    async function fetchSubtitle(fullUrl: string) {
     try {
-      await login(username, password);
-      goto('/home');
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        alert(e.message);
-      }
+      const response = await client.mediaInfo.$post({ json: { fullUrl } });
+      abstractedSubtitle = await response.json() as Caption[];
+    } catch (error) {
+      console.error("자막 불러오기 실패:", error);
     }
   }
+
+  let isSubtitleLoaded = $state(false);
+  //플레이어 준비 완료 후 자막 가져오기
+  async function handlePlayerReady(event) {
+      
+    try{
+      await fetchSubtitle(fullUrl);
+      player.playVideo();
+      isSubtitleLoaded = true;
+    } catch (error) {
+      console.error("자막 불러오기 실패:", error);
+    }
+
+    setInterval(() => {
+      if (player && player.getCurrentTime) {
+        const time = player.getCurrentTime();
+        for (const sub of abstractedSubtitle) {
+          if (time >= sub.start && time < sub.end) {
+            showingSubtitleText = sub.text;
+            showingTimeLine = `${sub.start} ~ ${sub.end}`;
+            break;
+          }
+        }
+      }
+    }, 100);
+  }
+
 </script>
 
-<div class="wrapper">
-  <h1>ll.me.kr</h1>
-  <h2>콘텐츠로 영어공부</h2>
-  <form on:submit={submitLogin} class="login-form">
-    <div class="form-group">
-      <label for="username">아이디</label>
-      <input id="username" type="text" bind:value={username} required />
-    </div>
 
-    <div class="form-group">
-      <label for="password">비밀번호</label>
-      <input id="password" type="password" bind:value={password} required />
-    </div>
 
-    <button type="submit" class="login-button">로그인</button>
-  </form>
+
+<svelte:head>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</svelte:head>
+
+<div class="videoWrapper">
+  <div id="main-container">
+    <div id="main-wrapper">
+      
+      
+      <div id={youtubeVideoID}>
+        <!--이 영역은 유튜브가 출력됨니다.-->
+      </div>
+
+      {#if !isSubtitleLoaded}
+        <div class="loading-message">자막을 가져오는 중입니다...</div>
+      {/if}
+      
+      <div class="subtitle-container">
+        <div id="timeline">{showingTimeLine}</div>
+        <div id="text">{showingSubtitleText}</div>
+      </div>
+      
+
+    </div>
+  </div>
 </div>
 
-<style lang="scss">
-  .wrapper {
+<style>
+  .videoWrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  /* 메인 컨테이너 스타일 추가 */
+  #main-container {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    height: 100%;
-
-    h1,
-    h2 {
-      text-align: center;
-      margin: 0;
-      font-weight: lighter;
-    }
-
-    h2 {
-      margin-top: 2px;
-      color: #333;
-      font-size: 1rem;
-    }
-
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      max-width: 300px;
-      margin: 15px auto 0;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-
-      label {
-        font-weight: 500;
-      }
-
-      input {
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-    }
-
-    .login-button {
-      padding: 10px;
-      background-color: #4682b4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-
-      &:hover {
-        background-color: darken(#4682b4, 10%);
-      }
-    }
+    align-items: center;
+    width: 100%;
   }
-</style>
+  
+  /* 메인 래퍼 스타일 추가 */
+  #main-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
+  }
+  
+  /* 유튜브 플레이어 스타일 추가 */
+  #youtube-player {
+    width: 800px;
+    height: 500px;
+    margin: 0 auto;
+  }
+  
+  /* 영상 아래에 자연스럽게 배치 */
+  .loading-message {
+    margin: 30px auto 0 auto;
+    text-align: center;
+    font-style: italic;
+    background: #fff;
+    color: #333;
+    padding: 12px 36px;
+    border-radius: 16px;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    border: 1.5px solid #eee;
+    width: fit-content;
+  }
+  
+  .subtitle-container {
+    margin: 30px auto 0 auto;
+    background: #fff;
+    color: #111;
+    padding: 28px 56px;
+    border-radius: 32px;
+    font-size: 1.8rem;
+    min-width: 420px;
+    max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+    border: 3px solid #222;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  #timeline {
+    font-size: 1.08rem;
+    color: #1976d2;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  
+  #text {
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1.6;
+    word-break: break-word;
+    color: #111;
+  }
+  </style>
