@@ -1,10 +1,19 @@
 {
   "name": "backend",
   "type": "module",
-  "main": "src/index.ts",
   "private": true,
+  "main": "src/index.ts",
+  "exports": {
+    "./hc": {
+      "import": {
+        "default": "./dist/hc.js",
+        "types": "./dist/hc.d.ts"
+      }
+    }
+  },
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.4.3",
