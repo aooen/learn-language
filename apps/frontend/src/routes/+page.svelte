@@ -2,14 +2,13 @@
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
 
-  let player: unknown;
+  let player: InstanceType<Window['YT']['Player']>;
 
   /**
    * 이부분에 단어장이나 퀴즈에서 호출 시 전달된 유튜브 videoID를 저장해주는 setter가 필요하다.
    */
-  let videoId = $state('UKp2CrfmVfw'); 
-  let fullUrl = 
-    'https://www.youtube.com/watch?v=aKq8bkY5eTU&pp=ygUS66-47Iqk7YSw67mE7Iqk7Yq4';
+  let videoId = $state('UKp2CrfmVfw');
+  let fullUrl = 'https://www.youtube.com/watch?v=aKq8bkY5eTU&pp=ygUS66-47Iqk7YSw67mE7Iqk7Yq4';
 
   const youtubeVideoID = 'youtube-player';
 
@@ -26,13 +25,13 @@
   //유튜브 가져오기
   onMount(() => {
     function load() {
-      player = new YT.Player(youtubeVideoID, {
+      player = new window.YT.Player(youtubeVideoID, {
         height: '500',
         width: '800',
         videoId: videoId,
         playerVars: { autoplay: 0 },
         events: {
-          onReady: handlePlayerReady
+          onReady: handlePlayerReady,
         },
       });
     }
@@ -42,27 +41,27 @@
     } else {
       window.onYouTubeIframeAPIReady = load;
     }
-  });  
-    //자막 가져오기기
-    async function fetchSubtitle(fullUrl: string) {
+  });
+
+  //자막 가져오기
+  async function fetchSubtitle(fullUrl: string) {
     try {
       const response = await client.mediaInfo.$post({ json: { fullUrl } });
-      abstractedSubtitle = await response.json() as Caption[];
+      abstractedSubtitle = (await response.json()) as Caption[];
     } catch (error) {
-      console.error("자막 불러오기 실패:", error);
+      console.error('자막 불러오기 실패:', error);
     }
   }
 
   let isSubtitleLoaded = $state(false);
-  //플레이어 준비 완료 후 자막 가져오기
-  async function handlePlayerReady(event) {
-      
-    try{
+  // 플레이어 준비 완료 후 자막 가져오기
+  async function handlePlayerReady() {
+    try {
       await fetchSubtitle(fullUrl);
       player.playVideo();
       isSubtitleLoaded = true;
     } catch (error) {
-      console.error("자막 불러오기 실패:", error);
+      console.error('자막 불러오기 실패:', error);
     }
 
     setInterval(() => {
@@ -78,11 +77,7 @@
       }
     }, 100);
   }
-
 </script>
-
-
-
 
 <svelte:head>
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -91,8 +86,6 @@
 <div class="videoWrapper">
   <div id="main-container">
     <div id="main-wrapper">
-      
-      
       <div id={youtubeVideoID}>
         <!--이 영역은 유튜브가 출력됨니다.-->
       </div>
@@ -100,13 +93,11 @@
       {#if !isSubtitleLoaded}
         <div class="loading-message">자막을 가져오는 중입니다...</div>
       {/if}
-      
+
       <div class="subtitle-container">
         <div id="timeline">{showingTimeLine}</div>
         <div id="text">{showingSubtitleText}</div>
       </div>
-      
-
     </div>
   </div>
 </div>
@@ -119,7 +110,7 @@
     width: 100%;
     flex-direction: column;
   }
-  
+
   /* 메인 컨테이너 스타일 추가 */
   #main-container {
     display: flex;
@@ -127,7 +118,7 @@
     align-items: center;
     width: 100%;
   }
-  
+
   /* 메인 래퍼 스타일 추가 */
   #main-wrapper {
     display: flex;
@@ -136,14 +127,14 @@
     width: 100%;
     max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
   }
-  
+
   /* 유튜브 플레이어 스타일 추가 */
   #youtube-player {
     width: 800px;
     height: 500px;
     margin: 0 auto;
   }
-  
+
   /* 영상 아래에 자연스럽게 배치 */
   .loading-message {
     margin: 30px auto 0 auto;
@@ -154,11 +145,11 @@
     padding: 12px 36px;
     border-radius: 16px;
     font-size: 1.2rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     border: 1.5px solid #eee;
     width: fit-content;
   }
-  
+
   .subtitle-container {
     margin: 30px auto 0 auto;
     background: #fff;
@@ -169,7 +160,7 @@
     min-width: 420px;
     max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
     text-align: center;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.13);
     border: 3px solid #222;
     display: flex;
     flex-direction: column;
@@ -177,7 +168,7 @@
     width: 100%;
     box-sizing: border-box;
   }
-  
+
   #timeline {
     font-size: 1.08rem;
     color: #1976d2;
@@ -185,7 +176,7 @@
     letter-spacing: 1px;
     font-weight: 500;
   }
-  
+
   #text {
     font-size: 1.8rem;
     font-weight: 600;
@@ -193,4 +184,4 @@
     word-break: break-word;
     color: #111;
   }
-  </style>
+</style>
