@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { quiz } from '~/schemas/quiz';
+import { quizTable } from '~/schemas/quiz';
 import { db } from '~/utils/db';
 import { zValidator } from '~/utils/validator-wrapper';
 import type { Env } from '~/types/hono';
@@ -24,8 +24,8 @@ const app = new Hono<Env>()
     try {
       let quizs = await db
         .select()
-        .from(quiz)
-        .where(eq(quiz.quizSet, Number(quizSetId)));
+        .from(quizTable)
+        .where(eq(quizTable.quizSetId, Number(quizSetId)));
       return c.json(quizs);
     } catch {}
     throw new HTTPException(404, { message: 'Not found quizSet' });
@@ -34,7 +34,10 @@ const app = new Hono<Env>()
     const data = c.req.valid('json');
     try {
       for (const q of data) {
-        await db.update(quiz).set({ progress: q.progress, due: q.due }).where(eq(quiz.id, q.id));
+        await db
+          .update(quizTable)
+          .set({ progress: q.progress, due: q.due })
+          .where(eq(quizTable.id, q.id));
       }
       return c.json({ success: true });
     } catch {}

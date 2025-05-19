@@ -1,10 +1,12 @@
 import { mysqlTable, int, varchar } from 'drizzle-orm/mysql-core';
-import { users } from './users';
+import { userTable } from './user';
 
-export const wordlist = mysqlTable('wordlist', {
-  id: int('id').primaryKey().autoincrement(),
-  title: varchar('title', { length: 255 }).notNull(),
-  userId: int('user_id')
+export const wordlistTable = mysqlTable('wordlist', {
+  id: int().primaryKey().autoincrement(),
+  title: varchar({ length: 255 }).notNull(),
+  userId: int()
     .notNull()
-    .references(() => users.id),
+    .references(() => userTable.id, { onDelete: 'cascade' }),
+  sourceType: varchar({ length: 20 }),
+  sourceUrl: varchar({ length: 1024 }),
 });

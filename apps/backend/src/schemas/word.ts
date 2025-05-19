@@ -1,10 +1,13 @@
-import { binary, char, int, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
+import { int, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
+import { wordlistTable } from './wordlist';
 
-export const word = mysqlTable('word', {
+export const wordTable = mysqlTable('word', {
   id: int().primaryKey().autoincrement(),
   word: varchar({ length: 255 }).notNull(),
   meaning: varchar({ length: 255 }).notNull(),
   count: int().notNull(),
   frequency: int().notNull(),
-  wordlistId: int().notNull(),
+  wordlistId: int()
+    .references(() => wordlistTable.id, { onDelete: 'cascade' })
+    .notNull(),
 });

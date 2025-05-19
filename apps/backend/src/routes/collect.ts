@@ -6,7 +6,7 @@ import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteTy
 import { zValidator } from '~/utils/validator-wrapper';
 import { getYoutubeSubtitle } from '~/utils/ytdlp';
 import type { Env } from '~/types/hono';
-import { word } from '~/schemas/word';
+import { wordTable } from '~/schemas/word';
 import { db } from '~/utils/db';
 import natural from 'natural';
 import { inArray } from 'drizzle-orm';
@@ -42,7 +42,7 @@ const app = new Hono<Env>().post(
       await Promise.all(
         Object.entries(stemCount).map(async ([stem, count]) => {
           try {
-            await db.insert(word).values({
+            await db.insert(wordTable).values({
               word: stem,
               meaning: '',
               count,

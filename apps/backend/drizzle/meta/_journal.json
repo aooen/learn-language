@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1746510742647,
-      "tag": "0000_noisy_nicolaos",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1747208969788,
-      "tag": "0001_wild_morph",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1747584019499,
-      "tag": "0002_romantic_nightmare",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1747584085621,
-      "tag": "0003_graceful_penance",
+      "when": 1747637104538,
+      "tag": "0000_sloppy_dragon_man",
       "breakpoints": true
     }
   ]

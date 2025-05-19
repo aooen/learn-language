@@ -1,12 +1,12 @@
 import { int, mysqlTable, varchar } from 'drizzle-orm/mysql-core';
-import { media } from './media';
+import { wordlistTable } from './wordlist';
 
-export const subtitle = mysqlTable('subtitle', {
-  sid: int().primaryKey().autoincrement(),
-  mediaId: int()
-    .references(() => media.id)
+export const subtitleTable = mysqlTable('subtitle', {
+  id: int().primaryKey().autoincrement(),
+  wordlistId: int()
+    .references(() => wordlistTable.id, { onDelete: 'cascade' })
     .notNull(),
   startTime: int().notNull(),
   endTime: int().notNull(),
-  subtitle: varchar({ length: 200 }).notNull(),
+  subtitle: varchar({ length: 1024 }).notNull(),
 });

@@ -1,14 +1,14 @@
 import { Hono } from 'hono';
 import type { Env } from '../types/hono.ts';
 import { db } from '~/utils/db';
-import { wordlist } from '../schemas/wordlist';
+import { wordlistTable } from '../schemas/wordlist';
 import { eq, and } from 'drizzle-orm';
 
 const app = new Hono<Env>()
   // 단어장 목록 조회
   .get('/', async (c) => {
     const userId = 1; // 임시 ID 설정
-    const result = await db.select().from(wordlist).where(eq(wordlist.userId, userId));
+    const result = await db.select().from(wordlistTable).where(eq(wordlistTable.userId, userId));
     return c.json(result);
   })
 
@@ -18,7 +18,7 @@ const app = new Hono<Env>()
     const { title } = body;
     const userId = 1;
 
-    await db.insert(wordlist).values({ title, userId });
+    await db.insert(wordlistTable).values({ title, userId });
     return c.json({ success: true });
   })
 
@@ -28,8 +28,8 @@ const app = new Hono<Env>()
     const userId = 1;
 
     const [{ affectedRows }] = await db
-      .delete(wordlist)
-      .where(and(eq(wordlist.id, id), eq(wordlist.userId, userId)));
+      .delete(wordlistTable)
+      .where(and(eq(wordlistTable.id, id), eq(wordlistTable.userId, userId)));
 
     return c.json({ success: affectedRows > 0 });
   });
