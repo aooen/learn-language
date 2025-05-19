@@ -36,6 +36,7 @@
       "name": "frontend",
       "dependencies": {
         "@learn-language/shared": "workspace:*",
+        "clsx": "^2.1.1",
         "hono": "^4.7.5",
       },
       "devDependencies": {
