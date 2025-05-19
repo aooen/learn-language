@@ -1,6 +1,5 @@
 <script lang="ts">
   import { client } from '$lib/utils/api';
-  import { goto } from '$app/navigation';
 
   let url = $state('');
   let resultPromise = $state<Promise<string> | null>(null);
@@ -8,7 +7,6 @@
   async function submitUrl() {
     resultPromise = client.collect.$post({ json: { url } }).then(async (res) => {
       const resultText = await res.text();
-      goto('/collect');
       return resultText;
     });
 

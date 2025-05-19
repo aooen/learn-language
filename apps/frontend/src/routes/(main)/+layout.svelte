@@ -11,9 +11,6 @@
       case page.url.pathname.startsWith('/home'):
         return 'home';
       case page.url.pathname.startsWith('/wordlist'):
-      case page.url.pathname.startsWith('/word'):
-      case page.url.pathname.startsWith('/quiz'):
-      case page.url.pathname.startsWith('/media'):
         return 'wordlist';
     }
     return null;

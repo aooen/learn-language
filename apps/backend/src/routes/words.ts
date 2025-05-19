@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { zValidator } from '~/utils/validator-wrapper';
 import { word } from '~/schemas/word';
 import { db } from '~/utils/db';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { Env } from '~/types/hono';
 
 const app = new Hono<Env>()
-  .get('/', async (c) => {
-    const result = await db.select().from(word);
+  .get('/:wordlistId', async (c) => {
+    const wordlistId = parseInt(c.req.param('wordlistId'), 10);
+    const result = await db.select().from(word).where(eq(word.wordlistId, wordlistId));
     return c.json(result);
   })
   .post(

@@ -1,7 +1,8 @@
 <script lang="ts">
-  import Card from './Card.svelte';
-  import { client } from '$lib/utils/api';
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
+  import { client } from '$lib/utils/api';
+  import Card from './Card.svelte';
 
   type Quiz = {
     id: number;
@@ -11,6 +12,8 @@
     sentence_from: string;
     due: number; // timestamp
   };
+
+  const wordlistId = $derived(page.params['id']);
 
   class MinHeap {
     heap: Quiz[] = $state([]);
@@ -125,12 +128,10 @@
     }
   }
 
-  // TODO: use quizSetId
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async function fetchQuizs(quizSetId: number) {
+  async function fetchQuizs(quizSetId: string) {
     const res = await client.quizSet[':id'].$get({
       param: {
-        id: '1',
+        id: quizSetId,
       },
     });
     const quizs = await res.json();
@@ -233,7 +234,7 @@
     }
     client.quizSet[':id'].$put({
       param: {
-        id: `${1}`,
+        id: wordlistId,
       },
       json: [...retired, ...queue.heap],
     });
@@ -243,7 +244,7 @@
   }
 
   onMount(async () => {
-    let typedQuizs = await fetchQuizs(1);
+    let typedQuizs = await fetchQuizs(wordlistId);
     for (const quiz of typedQuizs) {
       queue.push(quiz);
     }

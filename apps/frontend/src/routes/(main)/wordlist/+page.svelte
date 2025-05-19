@@ -97,10 +97,10 @@
   <ul>
     {#each wordlists as entry (entry.id)}
       <li>
-        <div class="entry">
-          <span><strong>{entry.title}</strong></span>
-          <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
-        </div>
+        <a class="entry" href={`/wordlist/${entry.id}`}>
+          {entry.title}
+        </a>
+        <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
       </li>
     {/each}
   </ul>
@@ -166,12 +166,11 @@
 
   .entry {
     display: flex;
-    align-items: center;
-  }
-
-  .entry span {
     flex: 1;
     word-break: break-word;
+    align-items: center;
+    color: black;
+    text-decoration: none;
   }
 
   .delete {

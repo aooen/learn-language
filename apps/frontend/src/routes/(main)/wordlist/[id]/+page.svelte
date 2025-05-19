@@ -1,22 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
+  import { page } from '$app/state';
 
-  type Word = {
-    id: number;
-    word: string;
-    meaning: string;
-    count: number;
-    level: number;
-    selected?: boolean;
+  type Word = Awaited<
+    ReturnType<Awaited<ReturnType<(typeof client.words)[':wordlistId']['$get']>>['json']>
+  >[number] & {
+    selected: boolean;
   };
 
-  let words: Word[] = [];
+  let words: Word[] = $state([]);
+  const wordlistId = $derived(page.params['id']);
 
   onMount(async () => {
-    const res = await client.words.$get();
+    const res = await client.words[':wordlistId'].$get({ param: { wordlistId } });
     const data = await res.json();
-    words = (data as Word[]).map((w) => ({
+    words = data.map((w) => ({
       ...w,
       selected: false,
     }));
@@ -37,7 +36,7 @@
 <h1>수집된 단어 리스트</h1>
 
 {#if words.length > 0}
-  <button on:click={deleteSelectedWords}>선택 삭제</button>
+  <button onclick={deleteSelectedWords}>선택 삭제</button>
   <table>
     <thead>
       <tr>
@@ -59,7 +58,8 @@
           <td>{word.word}</td>
           <td>{word.meaning}</td>
           <td>{word.count}</td>
-          <td>{word.level}</td>
+          <!-- TODO -->
+          <td>{word.frequency / 100}</td>
         </tr>
       {/each}
     </tbody>
