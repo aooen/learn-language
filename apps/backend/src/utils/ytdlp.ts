@@ -70,7 +70,8 @@ export async function prepareBinaries() {
   }
 }
 
-export async function getYoutubeSubtitle(locale: string, url: string) {
+export async function getYoutubeSubtitle(_locale: string, url: string) {
+  const locale = _locale.split('-')[0] ?? 'en';
   const ytdlpFile = path.join(vendorFolderName, ytdlpName);
   const proc = Bun.spawn(
     [ytdlpFile, '--skip-download', '--write-sub', '--sub-lang', locale, '-o', 'temp', url],

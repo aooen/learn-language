@@ -7,7 +7,7 @@ import { eq, and } from 'drizzle-orm';
 const app = new Hono<Env>()
   // 단어장 목록 조회
   .get('/', async (c) => {
-    const userId = 1; // 임시 ID 설정
+    const userId = c.get('userId');
     const result = await db.select().from(wordlistTable).where(eq(wordlistTable.userId, userId));
     return c.json(result);
   })
@@ -16,7 +16,7 @@ const app = new Hono<Env>()
   .post('/', async (c) => {
     const body = await c.req.json();
     const { title } = body;
-    const userId = 1;
+    const userId = c.get('userId');
 
     await db.insert(wordlistTable).values({ title, userId });
     return c.json({ success: true });
@@ -25,7 +25,7 @@ const app = new Hono<Env>()
   // 단어장 삭제
   .delete('/:id', async (c) => {
     const id = Number(c.req.param('id'));
-    const userId = 1;
+    const userId = c.get('userId');
 
     const [{ affectedRows }] = await db
       .delete(wordlistTable)

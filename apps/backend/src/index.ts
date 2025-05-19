@@ -12,7 +12,8 @@ import type { Env } from './types/hono';
 import './startup';
 
 const app = new Hono<Env>().use(cors()).use(async (c, next) => {
-  c.set('locale', 'en');
+  c.set('userId', 1); // TODO
+  c.set('locale', 'en-US'); // TODO
   await next();
 });
 
