@@ -2,7 +2,6 @@
   import { goto } from '$app/navigation';
   import { authStore, login } from '$lib/stores/auth.svelte';
   import { onMount } from 'svelte';
-  import './index.css';
 
   let username = $state('');
   let password = $state('');
@@ -17,7 +16,7 @@
   async function submitLogin(e: Event) {
     e.preventDefault();
     try {
-      await login(username, password);
+      await login({ username, password });
       goto('/home');
     } catch (e: unknown) {
       if (e instanceof Error) {
@@ -42,10 +41,13 @@
     </div>
 
     <button type="submit" class="login-button">로그인</button>
+    <a class="signup-link" href="/signup">회원가입</a>
   </form>
 </div>
 
 <style lang="scss">
+  @use 'sass:color';
+
   .wrapper {
     display: flex;
     flex-direction: column;
@@ -69,7 +71,9 @@
       display: flex;
       flex-direction: column;
       gap: 15px;
-      max-width: 300px;
+      width: 100%;
+      max-width: 360px;
+      padding: 0 10px;
       margin: 15px auto 0;
     }
 
@@ -100,8 +104,19 @@
       cursor: pointer;
 
       &:hover {
-        background-color: darken(#4682b4, 10%);
+        background-color: color.adjust(#4682b4, $lightness: -10%);
       }
+    }
+
+    .signup-link {
+      padding: 5px;
+      margin: 5px auto;
+      border: none;
+      border-radius: 4px;
+      color: black;
+      font-size: 16px;
+      text-decoration: none;
+      cursor: pointer;
     }
   }
 </style>

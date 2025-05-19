@@ -47,7 +47,7 @@ const app = new Hono<Env>()
       'json',
       z.object({
         username: z.string(),
-        password: z.string(),
+        password: z.string().min(8, 'must be at least 8 characters long'),
         motherLang: z.string(),
         targetLang: z.string(),
       }),
