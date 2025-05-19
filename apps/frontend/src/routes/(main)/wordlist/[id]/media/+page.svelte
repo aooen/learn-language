@@ -1,19 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import { client } from '$lib/utils/api';
+  import { SiteType } from '@learn-language/shared/utils/siteType';
 
   let player: InstanceType<Window['YT']['Player']>;
+  let fullUrl = $state<string | null>(null);
 
-  /**
-   * 이부분에 단어장이나 퀴즈에서 호출 시 전달된 유튜브 videoID를 저장해주는 setter가 필요하다.
-   */
-  let videoId = $state('UKp2CrfmVfw');
-  let fullUrl = 'https://www.youtube.com/watch?v=aKq8bkY5eTU&pp=ygUS66-47Iqk7YSw67mE7Iqk7Yq4';
-
+  const wordlistId = $derived(page.params['id']);
   const youtubeVideoID = 'youtube-player';
 
-  let showingSubtitleText = $state(''); //화면에 표시할 자막
-  let showingTimeLine = $state(''); //화면에 표시할 시간
+  let notSupportedMedia = $state(false);
+  let showingSubtitleText = $state(''); // 화면에 표시할 자막
+  let showingTimeLine = $state(''); // 화면에 표시할 시간
   let abstractedSubtitle = $state<Caption[]>([]);
 
   type Caption = {
@@ -24,11 +23,43 @@
 
   //유튜브 가져오기
   onMount(() => {
-    function load() {
+    async function load() {
+      const res = await client.wordlist[':id'].$get({ param: { id: wordlistId } });
+      const json = await res.json();
+      fullUrl = json.sourceUrl;
+      if (json.sourceType !== SiteType.Youtube || !fullUrl) {
+        notSupportedMedia = true;
+        return;
+      }
+
+      /**
+       * Extract video ID from different YouTube URL formats:
+       * - https://www.youtube.com/watch?v=-4GmbBoYQjE
+       * - https://www.youtube.com/watch?v=-4GmbBoYQjE&t=2
+       * - https://youtu.be/-4GmbBoYQjE
+       * - https://youtu.be/-4GmbBoYQjE?t=2
+       */
+      const videoId = (() => {
+        let matches;
+
+        // For youtu.be format
+        if (fullUrl.includes('youtu.be')) {
+          matches = fullUrl.match(/youtu\.be\/([^?&]+)/);
+          if (matches) return matches[1];
+        }
+
+        // For youtube.com format
+        matches = fullUrl.match(/[?&]v=([^?&]+)/);
+        if (matches) return matches[1];
+
+        // If no match found, return the original URL (fallback)
+        return fullUrl;
+      })();
+
       player = new window.YT.Player(youtubeVideoID, {
         height: '500',
         width: '800',
-        videoId: videoId,
+        videoId,
         playerVars: { autoplay: 0 },
         events: {
           onReady: handlePlayerReady,
@@ -57,7 +88,7 @@
   // 플레이어 준비 완료 후 자막 가져오기
   async function handlePlayerReady() {
     try {
-      await fetchSubtitle(fullUrl);
+      await fetchSubtitle(fullUrl!);
       player.playVideo();
       isSubtitleLoaded = true;
     } catch (error) {
@@ -92,6 +123,10 @@
 
       {#if !isSubtitleLoaded}
         <div class="loading-message">자막을 가져오는 중입니다...</div>
+      {/if}
+
+      {#if notSupportedMedia}
+        <div class="loading-message">지원하지 않는 미디어입니다.</div>
       {/if}
 
       <div class="subtitle-container">

@@ -12,6 +12,18 @@ const app = new Hono<Env>()
     return c.json(result);
   })
 
+  // 단어장 조회
+  .get('/:id', async (c) => {
+    const id = Number(c.req.param('id'));
+    const userId = c.get('userId');
+    const result = await db
+      .select()
+      .from(wordlistTable)
+      .where(and(eq(wordlistTable.id, id), eq(wordlistTable.userId, userId)));
+    const row = result[0]!;
+    return c.json(row);
+  })
+
   // 단어장 추가
   .post('/', async (c) => {
     const body = await c.req.json();
