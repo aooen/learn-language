@@ -1,10 +1,25 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { client } from '$lib/utils/api';
   import clsx from 'clsx';
   import ArchiveOutlineIcon from 'virtual:icons/ion/archive-outline';
   import FileTrayFullOutlineIcon from 'virtual:icons/ion/file-tray-full-outline';
+  import { updateJwt } from '$lib/stores/auth.svelte';
 
   let { children } = $props();
+
+  onMount(async () => {
+    // 유효한 jwt token인지 확인
+    const res = await client.user.me.$get();
+    if (!res.ok) {
+      updateJwt(null);
+      return goto('/');
+    }
+    const json = await res.json();
+    updateJwt(json.token);
+  });
 
   const menu = $derived.by(() => {
     switch (true) {

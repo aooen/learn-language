@@ -1,14 +1,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { authStore, login } from '$lib/stores/auth.svelte';
+  import { login } from '$lib/stores/auth.svelte';
+  import { client } from '$lib/utils/api';
   import { onMount } from 'svelte';
 
   let username = $state('');
   let password = $state('');
 
-  onMount(() => {
-    if (authStore.jwt) {
-      // TODO: valid JWT인지 체크 추가
+  onMount(async () => {
+    if ((await client.user.me.$get()).ok) {
       goto('/home');
     }
   });

@@ -6,6 +6,11 @@ export const authStore = $state({
   jwt: localStorage.getItem(LOCAL_STORAGE_JWT_KEY),
 });
 
+export function updateJwt(newJwt: string | null) {
+  authStore.jwt = newJwt;
+  localStorage.setItem(LOCAL_STORAGE_JWT_KEY, newJwt ?? '');
+}
+
 type LoginRequestJson = Parameters<typeof client.user.login.$post>[0]['json'];
 export async function login(reqJson: LoginRequestJson) {
   const res = await client.user.login.$post({ json: reqJson });
@@ -13,8 +18,7 @@ export async function login(reqJson: LoginRequestJson) {
     throw new Error('Not found user');
   }
   const json = await res.json();
-  authStore.jwt = json.token;
-  localStorage.setItem(LOCAL_STORAGE_JWT_KEY, json.token);
+  updateJwt(json.token);
 }
 
 type SignupRequestJson = Parameters<typeof client.user.signup.$post>[0]['json'];
@@ -24,6 +28,5 @@ export async function signup(reqJson: SignupRequestJson) {
     throw new Error("Can't create user");
   }
   const json = await res.json();
-  authStore.jwt = json.token;
-  localStorage.setItem(LOCAL_STORAGE_JWT_KEY, json.token);
+  updateJwt(json.token);
 }
