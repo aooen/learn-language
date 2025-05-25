@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import { SiteType } from '@learn-language/shared/utils/siteType';
+    import { stopPropagation } from 'svelte/legacy';
 
   let player: InstanceType<Window['YT']['Player']>;
   let fullUrl = $state<string | null>(null);
@@ -17,6 +18,9 @@
   let abstractedSubtitle = $state<Caption[]>([]);
   let wordMean = $state<wordMeaning[]>([]);
   let allSubtitle: SubtitleItem[] = $state([]); //자막을 담아둘 변수
+  let selectedWord: string | null=$state(''); //불러온 영단어를 저장할 변수
+  let selectedKoWord: string | null=$state(''); //불러온 한글뜻을 저장할 변수
+  let showWordOverlay = $state(false); //단어를 클릭하고, 화면에 출력하기 위한 변수
 
   type Caption = {
     start: number;
@@ -93,6 +97,7 @@
   async function fetchSubtitle(fullUrl: string) {
     try {
       const response = await client.mediaInfo.$post({ json: { fullUrl } });
+      console.log(response);
       abstractedSubtitle = (await response.json()) as Caption[];
     } catch (error) {
       console.error('자막 불러오기 실패:', error);
@@ -111,7 +116,6 @@
       console.error('자막 불러오기 실패:', error);
     }
 
-    let text;
     let lastSubtitleId ="";
 
     setInterval(() => {
@@ -141,20 +145,24 @@
 
   // 단어 클릭 핸들러
   async function handleWordClick(word: string){
-    //console.log($state.snapshot(word));
-    try {
-      const response = await client.findMean.$post({ json: { word } });
-      wordMean = (await response.json()) as wordMeaning[];
-    } catch (error) {
-      console.error('단어 불러오기 실패:', error);
-    }
+    console.log($state.snapshot(word));
+      //todo: wordMean에 koWord와 enWord가 있다. 
+      //1. 단어를 누르면 영상을 정지하게 한다.
+      //2. 영어뜻과 한글 뜻을 화면에 출력한다.
+      //3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
+    // try {
+    //   player.pauseVideo();
+    //   const response = await client.findMean.$post({ json: { word } });
+    //   wordMean = (await response.json()) as wordMeaning[];
+      
+    //   selectedWord = wordMean[0].enWord;
+    //   selectedKoWord = wordMean[0].koWord;
+
+    //   showWordOverlay = true;
+    // } catch (error) {
+    //   console.error('단어 불러오기 실패:', error);
+    // }
   }
-
-  //todo: wordMean에 koWord와 enWord가 있다. 
-  //1. 단어를 누르면 영상을 정지하게 한다.
-  //2. 영어뜻과 한글 뜻을 화면에 출력한다.
-  //3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
-
 
   function splitWords(text: string): string[] {
     let firstStep = text.trim().split(/\s+/);
@@ -167,11 +175,47 @@
 
     return words; 
   }
+
+  //오버레이한 뜻 창을 닫는다.
+  function closeOverlay() {
+    showWordOverlay = false;
+    selectedWord = null;
+    selectedKoWord = null;
+    player.playVideo();
+  }
 </script>
 
 <svelte:head>
   <script src="https://www.youtube.com/iframe_api"></script>
 </svelte:head>
+
+{#if showWordOverlay}
+  <div class="overlayOff" 
+  role="button"
+  tabindex="0"
+  onclick={closeOverlay}
+  onkeydown={e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      closeOverlay();
+    }
+  }}
+  >
+    <div 
+    class="overlayOn"
+    role="button"
+    tabindex="0"
+    onclick={e => e.stopPropagation()}
+    onkeydown={e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        closeOverlay();
+      }
+    }}
+    >
+      <div class="word-en">{selectedWord}</div>
+      <div class="word-ko">{selectedKoWord}</div>
+    </div>
+  </div>
+{/if}
 
 <div class="videoWrapper">
   <div id="main-container">
@@ -318,9 +362,6 @@
   font-weight: 600;
   line-height: 1.4;
 }
-
-
-
 
 .word-span {
     cursor: pointer;
