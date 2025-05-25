@@ -11,14 +11,29 @@
   const youtubeVideoID = 'youtube-player';
 
   let notSupportedMedia = $state(false);
-  let showingSubtitleText = $state(''); // 화면에 표시할 자막
+  let showingEnSubtitleText = $state(''); // 화면에 표시할 영어 자막
+  let showingKoSubtitleText = $state(''); //화면에 표시할 한글 자막
   let showingTimeLine = $state(''); // 화면에 표시할 시간
   let abstractedSubtitle = $state<Caption[]>([]);
+  let wordMean = $state<wordMeaning[]>([]);
+  let allSubtitle: SubtitleItem[] = $state([]); //자막을 담아둘 변수
 
   type Caption = {
     start: number;
     end: number;
     text: string;
+    koText: string;
+  };
+
+  type wordMeaning = {
+    koWord: string;
+    enWord: string;
+  };
+
+  interface SubtitleItem{
+    timeLine: string;
+    text: string;
+    koText: string;
   };
 
   //유튜브 가져오기
@@ -85,6 +100,7 @@
   }
 
   let isSubtitleLoaded = $state(false);
+
   // 플레이어 준비 완료 후 자막 가져오기
   async function handlePlayerReady() {
     try {
@@ -95,18 +111,61 @@
       console.error('자막 불러오기 실패:', error);
     }
 
+    let text;
+    let lastSubtitleId ="";
+
     setInterval(() => {
       if (player && player.getCurrentTime) {
         const time = player.getCurrentTime();
         for (const sub of abstractedSubtitle) {
           if (time >= sub.start && time < sub.end) {
-            showingSubtitleText = sub.text;
+            showingEnSubtitleText = sub.text;
+            showingKoSubtitleText = sub.koText;
             showingTimeLine = `${sub.start} ~ ${sub.end}`;
+            const currentSubId = `${sub.start}-${sub.end}`;
+
+            //화면에 모든 자막을 출력할때 사용하기 위한 부분입니다.
+            if(currentSubId !== lastSubtitleId){ //겹치는 자막은 저장하지 않겠음
+              allSubtitle=[
+                ...allSubtitle,
+                {text: showingEnSubtitleText, timeLine: showingTimeLine, koText: showingKoSubtitleText}
+              ];
+              lastSubtitleId = currentSubId;
+            }
             break;
           }
         }
       }
     }, 100);
+  }
+
+  // 단어 클릭 핸들러
+  async function handleWordClick(word: string){
+    //console.log($state.snapshot(word));
+    try {
+      const response = await client.findMean.$post({ json: { word } });
+      wordMean = (await response.json()) as wordMeaning[];
+    } catch (error) {
+      console.error('단어 불러오기 실패:', error);
+    }
+  }
+
+  //todo: wordMean에 koWord와 enWord가 있다. 
+  //1. 단어를 누르면 영상을 정지하게 한다.
+  //2. 영어뜻과 한글 뜻을 화면에 출력한다.
+  //3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
+
+
+  function splitWords(text: string): string[] {
+    let firstStep = text.trim().split(/\s+/);
+    
+    //띄어쓰기와 함께 ,와.와!나,?같은 부호기호를 제거해야함
+    let words: string[] = firstStep.map(word => {
+      const cleanedWord = word.replace(/[!]$/, '');
+      return cleanedWord;
+    });
+
+    return words; 
   }
 </script>
 
@@ -129,94 +188,150 @@
         <div class="loading-message">지원하지 않는 미디어입니다.</div>
       {/if}
 
-      <div class="subtitle-container">
-        <div id="timeline">{showingTimeLine}</div>
-        <div id="text">{showingSubtitleText}</div>
+        <div class="subtitle-container">
+          {#each allSubtitle.slice(-5).reverse() as subtitle, i}
+            <div class="subtitle-item {i === 0 ? 'current' : 'previous'}" style="--index: {i}">
+            <div class="timeline">{subtitle.timeLine}</div>
+            <div class="text">
+              {#each splitWords(subtitle.text) as word, idx}
+                <span
+                  role="button"
+                  tabindex="0"
+                  class="word-span"
+                  onclick={() => handleWordClick(word)}
+                  onkeydown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      handleWordClick(word);
+                    }
+                  }}
+                  >
+                  {word} 
+                </span>
+              {/each}
       </div>
+      <div class="koText">{subtitle.koText}</div>
+    </div>
+  {/each}
+</div>
     </div>
   </div>
 </div>
 
 <style>
-  .videoWrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    flex-direction: column;
-  }
+ .videoWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  flex-direction: column;
+}
 
-  /* 메인 컨테이너 스타일 추가 */
-  #main-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
+#main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
 
-  /* 메인 래퍼 스타일 추가 */
-  #main-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
-  }
+#main-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 800px;
+}
 
-  /* 유튜브 플레이어 스타일 추가 */
-  #youtube-player {
-    width: 800px;
-    height: 500px;
-    margin: 0 auto;
-  }
+#youtube-player {
+  width: 800px;
+  height: 500px;
+  margin: 0 auto;
+}
 
-  /* 영상 아래에 자연스럽게 배치 */
-  .loading-message {
-    margin: 30px auto 0 auto;
-    text-align: center;
-    font-style: italic;
-    background: #fff;
-    color: #333;
-    padding: 12px 36px;
-    border-radius: 16px;
-    font-size: 1.2rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    border: 1.5px solid #eee;
-    width: fit-content;
-  }
+.loading-message {
+  margin: 30px auto 0 auto;
+  text-align: center;
+  font-style: italic;
+  background: #fff;
+  color: #333;
+  padding: 12px 36px;
+  border-radius: 16px;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border: 1.5px solid #eee;
+  width: fit-content;
+}
 
-  .subtitle-container {
-    margin: 30px auto 0 auto;
-    background: #fff;
-    color: #111;
-    padding: 28px 56px;
-    border-radius: 32px;
-    font-size: 1.8rem;
-    min-width: 420px;
-    max-width: 800px; /* 유튜브 플레이어의 width와 동일하게 설정 */
-    text-align: center;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.13);
-    border: 3px solid #222;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    box-sizing: border-box;
-  }
+.subtitle-container {
+  margin: 30px auto 0 auto;
+  background: #fff;
+  color: #111;
+  padding: 28px 56px; 
+  border-radius: 32px; 
+  font-size: 1.8rem; 
+  min-width: 420px; 
+  max-width: 800px; 
+  text-align: center; 
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.13); 
+  border: 3px solid #222; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  width: 100%; 
+  box-sizing: border-box;
+  height: 400px; /* 고정 높이 설정 */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse; /* 역순 정렬 */
+  justify-content: flex-start;
+}
 
-  #timeline {
-    font-size: 1.08rem;
-    color: #1976d2;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-    font-weight: 500;
-  }
+.subtitle-item {
+  transition: all 0.5s ease;
+  position: relative;
+  transform: translateY(calc(var(--index) * -60px));
+  margin-bottom: 10px;
+  padding: 10px 0;
+}
 
-  #text {
-    font-size: 1.8rem;
-    font-weight: 600;
-    line-height: 1.6;
-    word-break: break-word;
-    color: #111;
+.subtitle-item.current {
+  font-weight: bold;
+  font-size: 2rem;
+  color: #000;
+  transform: translateY(0); /* 현재 자막은 중앙에 */
+  z-index: 2;
+}
+
+.subtitle-item.previous {
+  opacity: 0.7;
+  font-size: 1.5rem;
+  color: #666;
+}
+
+.timeline {
+  font-size: 0.9rem;
+  color: #1976d2;
+  margin-bottom: 4px;
+}
+
+.text {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+
+
+
+.word-span {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 2px;
+    transition: background 0.2s;
+    display: inline-block;
+  }
+  .word-span:hover, .word-span:focus {
+    background: #e0f7fa;
+    outline: none;
   }
 </style>
