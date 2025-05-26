@@ -128,7 +128,7 @@
             showingTimeLine = `${sub.start} ~ ${sub.end}`;
             const currentSubId = `${sub.start}-${sub.end}`;
 
-            //화면에 모든 자막을 출력할때 사용하기 위한 부분입니다.
+            //화면에 모든 자막을 출력할때 사용하기 위한 부분입니다. - 객체 배열
             if(currentSubId !== lastSubtitleId){ //겹치는 자막은 저장하지 않겠음
               allSubtitle=[
                 ...allSubtitle,
@@ -146,10 +146,10 @@
   // 단어 클릭 핸들러
   async function handleWordClick(word: string){
     console.log($state.snapshot(word));
-      //todo: wordMean에 koWord와 enWord가 있다. 
-      //1. 단어를 누르면 영상을 정지하게 한다.
-      //2. 영어뜻과 한글 뜻을 화면에 출력한다.
-      //3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
+    //   todo: wordMean에 koWord와 enWord가 있다. 
+    //   1. 단어를 누르면 영상을 정지하게 한다.
+    //   2. 영어뜻과 한글 뜻을 화면에 출력한다.
+    //   3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
     // try {
     //   player.pauseVideo();
     //   const response = await client.findMean.$post({ json: { word } });
