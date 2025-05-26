@@ -37,7 +37,7 @@ const parseWEBVTT = (input: string): Caption[] => {
     ) {
       // 텍스트 처리
       currentCaption.text = currentCaption.text ? `${currentCaption.text}\n${line}` : line;
-      
+
       //임시 한글 자막 처리
       currentCaption.koText = '[한글 자막 출력 부분]';
 
@@ -61,8 +61,8 @@ const parseWEBVTT = (input: string): Caption[] => {
     currentCaption.end !== undefined
   ) {
     captions.push(currentCaption as Caption);
-  }  
-  
+  }
+
   return captions;
 };
 
@@ -99,17 +99,17 @@ const app = new Hono<Env>().post(
 
 
 
-     //db에서 자막을 가져올 경우
-      // let enSubtitle = await db.select({start: subtitleTable.startTime, end: subtitleTable.endTime, text: subtitleTable.subtitle, koText: subtitleTable.koSubtitle})
-      // .from(subtitleTable)
-      // .innerJoin(wordlistTable, eq(subtitleTable.wordlistId,wordlistTable.id))
-      // .where(eq(wordlistTable.sourceUrl,data.fullUrl));
-      // return c.json(enSubtitle);
-     
+    //db에서 자막을 가져올 경우
+    // let enSubtitle = await db.select({start: subtitleTable.startTime, end: subtitleTable.endTime, text: subtitleTable.subtitle, koText: subtitleTable.koSubtitle})
+    // .from(subtitleTable)
+    // .innerJoin(wordlistTable, eq(subtitleTable.wordlistId,wordlistTable.id))
+    // .where(eq(wordlistTable.sourceUrl,data.fullUrl));
+    // return c.json(enSubtitle);
+
     if (determineSiteType(data.fullUrl) === SiteType.Youtube) {
       try {
         const subtitleText = await getYoutubeSubtitle(locale, data.fullUrl);
-        
+
         const parsedSubtitles = parseWEBVTT(subtitleText);
         if (!parsedSubtitles.length) {
           throw new Error('자막을 찾을 수 없습니다.');

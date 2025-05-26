@@ -3,7 +3,6 @@
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import { SiteType } from '@learn-language/shared/utils/siteType';
-    import { stopPropagation } from 'svelte/legacy';
 
   let player: InstanceType<Window['YT']['Player']>;
   let fullUrl = $state<string | null>(null);
@@ -145,23 +144,23 @@
 
   // 단어 클릭 핸들러
   async function handleWordClick(word: string){
-    console.log($state.snapshot(word));
-    //   todo: wordMean에 koWord와 enWord가 있다. 
-    //   1. 단어를 누르면 영상을 정지하게 한다.
-    //   2. 영어뜻과 한글 뜻을 화면에 출력한다.
-    //   3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
-    // try {
-    //   player.pauseVideo();
-    //   const response = await client.findMean.$post({ json: { word } });
-    //   wordMean = (await response.json()) as wordMeaning[];
+   //console.log($state.snapshot(word));
+      // todo: wordMean에 koWord와 enWord가 있다. 
+      // 1. 단어를 누르면 영상을 정지하게 한다.
+      // 2. 영어뜻과 한글 뜻을 화면에 출력한다.
+      // 3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
+    try {
+      const response = await client.findMean.$post({ json: { word } });
+      wordMean = (await response.json()) as wordMeaning[];
+      player.pauseVideo();
       
-    //   selectedWord = wordMean[0].enWord;
-    //   selectedKoWord = wordMean[0].koWord;
+      selectedWord = wordMean[0].enWord;
+      selectedKoWord = wordMean[0].koWord;
 
-    //   showWordOverlay = true;
-    // } catch (error) {
-    //   console.error('단어 불러오기 실패:', error);
-    // }
+      showWordOverlay = true;
+    } catch (error) {
+      console.error('단어 불러오기 실패:', error);
+    }
   }
 
   function splitWords(text: string): string[] {
@@ -189,33 +188,6 @@
   <script src="https://www.youtube.com/iframe_api"></script>
 </svelte:head>
 
-{#if showWordOverlay}
-  <div class="overlayOff" 
-  role="button"
-  tabindex="0"
-  onclick={closeOverlay}
-  onkeydown={e => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      closeOverlay();
-    }
-  }}
-  >
-    <div 
-    class="overlayOn"
-    role="button"
-    tabindex="0"
-    onclick={e => e.stopPropagation()}
-    onkeydown={e => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        closeOverlay();
-      }
-    }}
-    >
-      <div class="word-en">{selectedWord}</div>
-      <div class="word-ko">{selectedKoWord}</div>
-    </div>
-  </div>
-{/if}
 
 <div class="videoWrapper">
   <div id="main-container">
@@ -233,11 +205,38 @@
       {/if}
 
         <div class="subtitle-container">
-          {#each allSubtitle.slice(-5).reverse() as subtitle, i}
+          {#if showWordOverlay}
+          <div
+            class="overlayOff"
+            role="button"
+            tabindex="0"
+            onclick={closeOverlay}
+            onkeydown={e => {
+              if (e.key === 'Enter' || e.key === ' ') closeOverlay();
+            }}
+          >
+            <div
+              class="overlayOn"
+              role="dialog"
+              tabindex="0"
+              onclick={e => e.stopPropagation()}
+              onkeydown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                }
+              }}
+            >
+              <div class="word-en">{selectedWord}</div>
+              <div class="word-ko">{selectedKoWord}</div>
+            </div>
+          </div>
+        {/if}
+      
+          {#each allSubtitle.slice(-5).reverse() as subtitle, i (subtitle.timeLine)}
             <div class="subtitle-item {i === 0 ? 'current' : 'previous'}" style="--index: {i}">
             <div class="timeline">{subtitle.timeLine}</div>
             <div class="text">
-              {#each splitWords(subtitle.text) as word, idx}
+              {#each splitWords(subtitle.text) as word, idx (idx)}
                 <span
                   role="button"
                   tabindex="0"
@@ -322,12 +321,13 @@
   gap: 12px; 
   width: 100%; 
   box-sizing: border-box;
-  height: 400px; /* 고정 높이 설정 */
+  height: 400px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
-  flex-direction: column-reverse; /* 역순 정렬 */
+  flex-direction: column-reverse;
   justify-content: flex-start;
+  position: relative;
 }
 
 .subtitle-item {
@@ -342,7 +342,7 @@
   font-weight: bold;
   font-size: 2rem;
   color: #000;
-  transform: translateY(0); /* 현재 자막은 중앙에 */
+  transform: translateY(0);
   z-index: 2;
 }
 
@@ -375,4 +375,43 @@
     background: #e0f7fa;
     outline: none;
   }
+
+
+
+
+  .overlayOff {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: rgba(255,255,255,0.97);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  padding: 20px 40px;
+  min-width: 200px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7em;
+  pointer-events: auto;
+}
+
+.overlayOn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.word-en {
+  font-size: 2em;
+  font-weight: 700;
+  color: #1976d2;
+  margin-bottom: 12px;
+}
+.word-ko {
+  font-size: 1.7em;
+  color: #333;
+}
 </style>

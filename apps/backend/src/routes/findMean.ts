@@ -6,22 +6,27 @@ import { z } from 'zod';
 import { db } from '~/utils/db';
 import { wordTable } from '~/schemas/word'
 import { eq } from 'drizzle-orm';
+import natural from 'natural';
 
 const app = new Hono<Env>().post(
-    '/',
-    zValidator(
-      'json',
-      z.object({
-        word: z.string(),
-      }),
-    ),
-    async (c) => {
-        const data = c.req.valid('json');
-        let koMean = await db.select({koWord: wordTable.meaning, enWord: wordTable.word})
-                             .from(wordTable)
-                             .where(eq(wordTable.word,data.word));
+  '/',
+  zValidator(
+    'json',
+    z.object({
+      word: z.string(),
+    }),
+  ),
+  async (c) => {
+    const data = c.req.valid('json');
+    const stemmer = natural.PorterStemmer; //들어온 단어의 어간 추출 - porter stemming 알고리즘 적용
+
+    data.word = stemmer.stem(data.word.toLowerCase());
+
+    let koMean = await db.select({ koWord: wordTable.meaning, enWord: wordTable.word })
+      .from(wordTable)
+      .where(eq(wordTable.word, data.word));
     return c.json(koMean);
-    }
+  }
 );
 
 export default app;
