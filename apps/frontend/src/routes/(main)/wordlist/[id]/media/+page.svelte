@@ -11,7 +11,7 @@
   const youtubeVideoID = 'youtube-player';
 
   let notSupportedMedia = $state(false);
-  let showingEnSubtitleText = $state(''); // 화면에 표시할 영어 자막
+  let showingEnSubtitleText = $state('');
   let showingKoSubtitleText = $state(''); //화면에 표시할 한글 자막
   let showingTimeLine = $state(''); // 화면에 표시할 시간
   let abstractedSubtitle = $state<Caption[]>([]);
@@ -20,6 +20,10 @@
   let selectedWord: string | null = $state(''); //불러온 영단어를 저장할 변수
   let selectedKoWord: string | null = $state(''); //불러온 한글뜻을 저장할 변수
   let showWordOverlay = $state(false); //단어를 클릭하고, 화면에 출력하기 위한 변수
+  let subtitleContainer: HTMLDivElement;
+  let userHasScrolled = false;
+  let scrollTimeout: ReturnType<typeof setTimeout>;
+  let activeSubIndex = $state(-1);
 
   type Caption = {
     start: number;
@@ -37,6 +41,8 @@
     timeLine: string;
     text: string;
     koText: string;
+    start: number;
+    end: number;
   }
 
   //유튜브 가져오기
@@ -96,8 +102,14 @@
   async function fetchSubtitle(fullUrl: string) {
     try {
       const response = await client.mediaInfo.$post({ json: { fullUrl } });
-      console.log(response);
       abstractedSubtitle = (await response.json()) as Caption[];
+      allSubtitle = abstractedSubtitle.map((sub) => ({
+        text: sub.text,
+        koText: sub.koText,
+        timeLine: `${sub.start} ~ ${sub.end}`,
+        start: sub.start,
+        end: sub.end,
+      }));
     } catch (error) {
       console.error('자막 불러오기 실패:', error);
     }
@@ -115,68 +127,60 @@
       console.error('자막 불러오기 실패:', error);
     }
 
-    let lastSubtitleId = '';
-
     setInterval(() => {
       if (player && player.getCurrentTime) {
         const time = player.getCurrentTime();
-        for (const sub of abstractedSubtitle) {
-          if (time >= sub.start && time < sub.end) {
-            showingEnSubtitleText = sub.text;
-            showingKoSubtitleText = sub.koText;
-            showingTimeLine = `${sub.start} ~ ${sub.end}`;
-            const currentSubId = `${sub.start}-${sub.end}`;
-
-            //화면에 모든 자막을 출력할때 사용하기 위한 부분입니다. - 객체 배열
-            if (currentSubId !== lastSubtitleId) {
-              //겹치는 자막은 저장하지 않겠음
-
-              allSubtitle = [
-                ...allSubtitle,
-                {
-                  text: showingEnSubtitleText,
-                  timeLine: showingTimeLine,
-                  koText: showingKoSubtitleText,
-                },
-              ];
-              if (!userHasScrolled) {
-                setTimeout(() => {
-                  subtitleContainer.scrollTop = 0;
-                }, 0);
-              }
-              lastSubtitleId = currentSubId;
-            }
-            break;
+        const idx = allSubtitle.findIndex((sub) => time >= sub.start && time < sub.end);
+        if (idx !== -1 && idx !== activeSubIndex) {
+          if (
+            showingEnSubtitleText != null &&
+            showingKoSubtitleText != null &&
+            showingTimeLine != null
+          ) {
+            activeSubIndex = idx;
+            showingEnSubtitleText = allSubtitle[idx].text;
+            showingKoSubtitleText = allSubtitle[idx].koText;
+            showingTimeLine = allSubtitle[idx].timeLine;
           }
+        }
+        if (!userHasScrolled) {
+          setTimeout(() => {
+            const activeElem = document.getElementById(`subtitle-${activeSubIndex}`);
+            if (activeElem && subtitleContainer) {
+              const containerHeight = subtitleContainer.clientHeight;
+              const elemOffset =
+                activeElem.offsetTop - containerHeight / 2 + activeElem.clientHeight / 2;
+              subtitleContainer.scrollTo({ top: elemOffset, behavior: 'auto' });
+            }
+          }, 0);
         }
       }
     }, 100);
   }
 
-  let subtitleContainer: HTMLDivElement;
-  let userHasScrolled = false;
-  let scrollTimeout: ReturnType<typeof setTimeout>;
-
+  //스크롤 핸들러
   function handleScroll() {
     if (subtitleContainer.scrollTop !== 0) {
       userHasScrolled = true;
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         userHasScrolled = false;
-        subtitleContainer.scrollTop = 0;
+        // 3초 후 현재 자막 위치로 자동 스크롤 복귀
+        const activeElem = document.getElementById(`subtitle-${activeSubIndex}`);
+        if (activeElem && subtitleContainer) {
+          const containerHeight = subtitleContainer.clientHeight;
+          const elemOffset =
+            activeElem.offsetTop - containerHeight / 2 + activeElem.clientHeight / 2;
+          subtitleContainer.scrollTo({ top: elemOffset, behavior: 'smooth' });
+        }
       }, 3000);
     }
   }
 
   // 단어 클릭 핸들러
   async function handleWordClick(word: string) {
-    //console.log($state.snapshot(word));
-    // todo: wordMean에 koWord와 enWord가 있다.
-    // 1. 단어를 누르면 영상을 정지하게 한다.
-    // 2. 영어뜻과 한글 뜻을 화면에 출력한다.
-    // 3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
     try {
-      const response = await client.findMean.$post({ json: { word } });
+      const response = await client.words.find.$post({ json: { word } });
       wordMean = (await response.json()) as wordMeaning[];
       player.pauseVideo();
 
@@ -194,11 +198,11 @@
 
     //띄어쓰기와 함께 ,와.와!나,?같은 부호기호를 제거해야함
     let words: string[] = firstStep.map((word) => {
-      const cleanedWord = word.replace(/[!]$/, '');
+      const cleanedWord = word.replace(/^[,.!?]+|[,.!?]+$/g, '');
       return cleanedWord;
     });
 
-    return words;
+    return words.filter((w) => w.length > 0);
   }
 
   //오버레이한 뜻 창을 닫는다.
@@ -257,8 +261,11 @@
           </div>
         {/if}
 
-        {#each allSubtitle.slice(-10).reverse() as subtitle, i (subtitle.timeLine)}
-          <div class="subtitle-item {i === 0 ? 'current' : 'previous'}">
+        {#each allSubtitle as subtitle, i (subtitle.timeLine)}
+          <div
+            id={'subtitle-' + i}
+            class="subtitle-item {i === activeSubIndex ? 'current' : 'previous'}"
+          >
             <div class="timeline">{subtitle.timeLine}</div>
             <div class="text">
               {#each splitWords(subtitle.text) as word, idx (idx)}
@@ -349,20 +356,19 @@
     display: flex;
     flex-direction: column-reverse;
     justify-content: flex-start;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     overflow-anchor: none;
     gap: 12px;
     position: relative;
   }
 
   .subtitle-item {
-    /* transform 제거하여 자연스러운 플로우 사용 */
     transition:
       opacity 0.3s ease,
       font-size 0.3s ease;
     margin-bottom: 10px;
     padding: 10px 0;
-    flex-shrink: 0; /* 아이템 크기 고정 */
+    flex-shrink: 0;
   }
 
   .subtitle-item.current {
@@ -397,6 +403,7 @@
     transition: background 0.2s;
     display: inline-block;
   }
+
   .word-span:hover,
   .word-span:focus {
     background: #e0f7fa;
@@ -404,28 +411,24 @@
   }
 
   .overlayOff {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%); /* 가로, 세로 모두 중앙 정렬 */
-    z-index: 30;
-    background: rgba(255, 255, 255, 0.97);
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
-    padding: 20px 40px;
-    min-width: 200px;
-    min-height: 80px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    font-size: 0.7em;
-    pointer-events: auto;
+    justify-content: center;
+    z-index: 1000;
   }
 
   .overlayOn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    max-width: 80%;
+    text-align: center;
   }
 
   .word-en {
@@ -434,6 +437,7 @@
     color: #1976d2;
     margin-bottom: 12px;
   }
+
   .word-ko {
     font-size: 1.7em;
     color: #333;
