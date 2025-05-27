@@ -8,6 +8,7 @@ import { userTable } from '~/schemas/user';
 import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
+import { verify } from 'hono/jwt';
 
 const app = new Hono<Env>()
   .post(
@@ -112,6 +113,54 @@ const app = new Hono<Env>()
         process.env.JWT_SECRET!,
       ),
     });
-  });
+  })
+
+  // 비밀번호 변경(mypage)
+  .put(
+    '/me/password',
+    zValidator(
+      'json',
+      z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(8),
+      }),
+    ),
+    async (c) => {
+      const token = c.req.header('Authorization')?.replace('Bearer ', '');
+      if (!token) return c.text('Unauthorized', 401);
+
+      let userId: string;
+      try {
+        const payload = await verify(token, process.env.JWT_SECRET!);
+        userId = payload.sub as string;
+      } catch {
+        return c.text('Invalid token', 401);
+      }
+
+      const { currentPassword, newPassword } = c.req.valid('json');
+
+      const [user] = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, Number(userId)));
+
+      if (!user) return c.text('User not found', 404);
+
+      const isMatch = await Bun.password.verify(currentPassword, user.password);
+      if (!isMatch) return c.text('현재 비밀번호가 일치하지 않습니다', 403);
+
+      const hashed = await Bun.password.hash(newPassword, {
+        algorithm: 'bcrypt',
+        cost: 4,
+      });
+
+      await db
+        .update(userTable)
+        .set({ password: hashed })
+        .where(eq(userTable.id, Number(userId)));
+
+      return c.text('비밀번호가 성공적으로 변경되었습니다');
+    },
+  );
 
 export default app;
