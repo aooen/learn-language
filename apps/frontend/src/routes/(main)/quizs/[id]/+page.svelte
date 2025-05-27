@@ -262,6 +262,9 @@
       }
       queue.push(quiz);
     }
+    if (queue.size() === 0) {
+      done = true;
+    }
   });
 </script>
 

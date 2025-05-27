@@ -115,8 +115,7 @@
           <a class="entry" href={`/wordlist/${entry.id}`}>
             {entry.title}
           </a>
-          <button class="quizset" onclick={() => instatantiateQuizSet(entry.id)}>MakeQuizSet</button
-          >
+          <button class="quizset" onclick={() => instatantiateQuizSet(entry.id)}>QuizIt</button>
           <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
         </div>
       </li>
@@ -204,14 +203,28 @@
   }
 
   .quizset {
+    min-width: 30px;
+    width: 60px;
+    padding: 4px 6px;
+    font-size: 0.92rem;
+    text-align: center;
     margin-right: 4px;
   }
 
   .delete {
-    width: 36px;
-    min-width: 36px;
-    padding: 4px 0;
-    font-size: 1.1rem;
+    width: 4px;
+    min-width: 4px;
+    padding: 2px 0;
+    font-size: 1rem;
+    background: none;
+    color: #ef4444;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .delete:hover {
+    background: #fee2e2;
   }
 
   .add-button {
@@ -278,7 +291,6 @@
   }
 
   button {
-    flex: 1;
     padding: 10px 0;
     border: none;
     border-radius: 6px;
