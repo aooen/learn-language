@@ -5,7 +5,7 @@
   type QuizSet = {
     id: number;
     wordlistId: number;
-    maker: number;
+    maker: number | null;
     // add more fields if needed
   };
 
@@ -28,6 +28,45 @@
   onMount(fetchQuizSets);
 </script>
 
+<style>
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 32px auto 0 auto;
+    max-width: 500px;
+  }
+  li {
+    background: #f9fafb;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 18px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  li:hover {
+    box-shadow: 0 6px 24px rgba(37,99,235,0.12);
+    transform: translateY(-2px) scale(1.02);
+  }
+  a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin-right: 12px;
+    transition: color 0.2s;
+  }
+  a:hover {
+    color: #1e40af;
+    text-decoration: underline;
+  }
+  li span {
+    color: #64748b;
+    font-size: 1rem;
+  }
+</style>
+
 {#if errorMsg}
   <div class="error">{errorMsg}</div>
 {:else if quizSets.length === 0}
@@ -36,7 +75,8 @@
   <ul>
     {#each quizSets as set (set.id)}
       <li>
-        <a href={`/quizs/${set.id}`}>QuizSet #{set.id}</a> (Wordlist: {set.wordlistId})
+        <a href={`/quizs/${set.id}`}>QuizSet #{set.id}</a>
+        <span>(Wordlist: {set.wordlistId})</span>
       </li>
     {/each}
   </ul>

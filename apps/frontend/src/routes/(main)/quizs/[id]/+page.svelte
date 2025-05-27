@@ -3,14 +3,16 @@
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import Card from './Card.svelte';
+  import { goto } from '$app/navigation';
 
   type Quiz = {
     id: number;
     front: string;
     back: string;
     progress: number;
-    sentence_from: string;
+    sentenceFrom: string;
     due: number; // timestamp
+    quizSetId: number;
   };
 
   const quizSetId = $derived(page.params['id']);
@@ -142,8 +144,9 @@
         front: x.front,
         back: x.back,
         progress: x.progress,
-        sentence_from: x.sentence_from,
+        sentenceFrom: x.sentenceFrom,
         due: x.due,
+        quizSetId: x.quizSetId,
       };
       return newQuiz;
     });
@@ -224,6 +227,9 @@
         return;
       } else {
         target_quiz.progress += buttonType.progress;
+        if (target_quiz.progress > 100) {
+          target_quiz.progress = 100;
+        }
       }
       target_quiz.due = buttonType.later;
 
@@ -245,7 +251,15 @@
 
   onMount(async () => {
     let typedQuizs = await fetchQuizs(quizSetId);
+    if (typedQuizs.length === 0) {
+      done = true;
+      return;
+    }
     for (const quiz of typedQuizs) {
+      if (quiz.progress >= 100) {
+        retired.push(quiz);
+        continue;
+      }
       queue.push(quiz);
     }
   });
@@ -264,9 +278,9 @@
       }}
     >
       {#if queue.heap.length != 0}
-        <Card front={queue.heap[0].front} back={queue.heap[0].back} {flipped}></Card>
+        <Card front={queue.heap[0].front} back={queue.heap[0].back} {flipped} progress={queue.heap[0].progress}></Card>
       {:else}
-        <Card front="Loading" back="Loading" {flipped}></Card>
+        <Card front="Loading" back="Loading" {flipped} progress={0}></Card>
       {/if}
     </div>
   </div>
@@ -285,8 +299,10 @@
     </div>
   {/if}
 {:else}
-  <Card front="All Done!" back="We are updating your progress." {flipped}></Card>
+  <Card front="All Done!" back="We are updating your progress." {flipped} progress={0}></Card>
 {/if}
+
+<button class="go-back" onclick={() => goto('/quizs/')}>Go Back</button>
 
 <style>
   .cardEventBox {
@@ -337,5 +353,21 @@
   /* Active Click Effect */
   .buttons button:active {
     transform: scale(0.95);
+  }
+
+  .go-back {
+    margin: 24px auto 0 auto;
+    display: block;
+    padding: 8px 24px;
+    background: #e5e7eb;
+    color: #222;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .go-back:hover {
+    background: #cbd5e1;
   }
 </style>
