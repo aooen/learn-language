@@ -20,6 +20,9 @@
   let selectedWord: string | null = $state(''); //불러온 영단어를 저장할 변수
   let selectedKoWord: string | null = $state(''); //불러온 한글뜻을 저장할 변수
   let showWordOverlay = $state(false); //단어를 클릭하고, 화면에 출력하기 위한 변수
+  let subtitleContainer: HTMLDivElement;
+  let userHasScrolled = false;
+  let scrollTimeout: ReturnType<typeof setTimeout>;
 
   type Caption = {
     start: number;
@@ -129,8 +132,6 @@
 
             //화면에 모든 자막을 출력할때 사용하기 위한 부분입니다. - 객체 배열
             if (currentSubId !== lastSubtitleId) {
-              //겹치는 자막은 저장하지 않겠음
-
               allSubtitle = [
                 ...allSubtitle,
                 {
@@ -153,10 +154,7 @@
     }, 100);
   }
 
-  let subtitleContainer: HTMLDivElement;
-  let userHasScrolled = false;
-  let scrollTimeout: ReturnType<typeof setTimeout>;
-
+  //스크롤 핸들러
   function handleScroll() {
     if (subtitleContainer.scrollTop !== 0) {
       userHasScrolled = true;
@@ -170,11 +168,6 @@
 
   // 단어 클릭 핸들러
   async function handleWordClick(word: string) {
-    //console.log($state.snapshot(word));
-    // todo: wordMean에 koWord와 enWord가 있다.
-    // 1. 단어를 누르면 영상을 정지하게 한다.
-    // 2. 영어뜻과 한글 뜻을 화면에 출력한다.
-    // 3. 화면의 다른 곳을 클릭하면 화면이 내려가고 영상을 다시 재생시킨다.
     try {
       const response = await client.findMean.$post({ json: { word } });
       wordMean = (await response.json()) as wordMeaning[];
@@ -194,11 +187,11 @@
 
     //띄어쓰기와 함께 ,와.와!나,?같은 부호기호를 제거해야함
     let words: string[] = firstStep.map((word) => {
-      const cleanedWord = word.replace(/[!]$/, '');
+      const cleanedWord = word.replace(/^[,.!?]+|[,.!?]+$/g, '');
       return cleanedWord;
     });
 
-    return words;
+    return words.filter((w) => w.length > 0);
   }
 
   //오버레이한 뜻 창을 닫는다.
@@ -356,13 +349,12 @@
   }
 
   .subtitle-item {
-    /* transform 제거하여 자연스러운 플로우 사용 */
     transition:
       opacity 0.3s ease,
       font-size 0.3s ease;
     margin-bottom: 10px;
     padding: 10px 0;
-    flex-shrink: 0; /* 아이템 크기 고정 */
+    flex-shrink: 0;
   }
 
   .subtitle-item.current {
@@ -397,6 +389,7 @@
     transition: background 0.2s;
     display: inline-block;
   }
+
   .word-span:hover,
   .word-span:focus {
     background: #e0f7fa;
@@ -434,6 +427,7 @@
     color: #1976d2;
     margin-bottom: 12px;
   }
+
   .word-ko {
     font-size: 1.7em;
     color: #333;
