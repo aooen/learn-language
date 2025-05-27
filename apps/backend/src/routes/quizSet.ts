@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { quizTable } from '~/schemas/quiz';
+import { quizSetTable } from '~/schemas/quizSet';
 import { db } from '~/utils/db';
 import { zValidator } from '~/utils/validator-wrapper';
 import type { Env } from '~/types/hono';
@@ -42,6 +43,32 @@ const app = new Hono<Env>()
       return c.json({ success: true });
     } catch {}
     throw new HTTPException(404, { message: 'Not found quizId' });
-  });
+  })
+  .post(
+    '/',
+    zValidator(
+      'json',
+      z.object({
+        wordlistId: z.number(),
+      }),
+    ),
+    async (c) => {
+      const { wordlistId } = c.req.valid('json');
+      const userId = c.get('userId');
+      if (!wordlistId || !userId) {
+        throw new HTTPException(400, { message: 'wordlistId and userId are required' });
+      }
+      // Check if the wordlist exists for the user
+      try {
+        const [quizSet] = await db
+          .insert(quizSetTable)
+          .values({ wordlistId: wordlistId, maker: userId })
+          .$returningId();
+        return c.json({ success: true, quizSet });
+      } catch (err) {
+        throw new HTTPException(500, { message: 'Failed to create quiz set' });
+      }
+    },
+  );
 
 export default app;
