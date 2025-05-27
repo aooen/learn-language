@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { quizTable } from '~/schemas/quiz';
 import { quizSetTable } from '~/schemas/quizSet';
+import { wordTable } from '~/schemas/word';
 import { db } from '~/utils/db';
 import { zValidator } from '~/utils/validator-wrapper';
 import type { Env } from '~/types/hono';
@@ -15,8 +16,9 @@ const Quiz = z.object({
   front: z.string(),
   back: z.string(),
   progress: z.number(),
-  sentence_from: z.string(),
+  sentenceFrom: z.string(),
   due: z.number(),
+  quizSetId: z.number(),
 });
 
 const app = new Hono<Env>()
@@ -60,15 +62,47 @@ const app = new Hono<Env>()
       }
       // Check if the wordlist exists for the user
       try {
-        const [quizSet] = await db
+        const quizSetIds = await db
           .insert(quizSetTable)
           .values({ wordlistId: wordlistId, maker: userId })
           .$returningId();
-        return c.json({ success: true, quizSet });
+
+        const quizSetId = quizSetIds[0]?.id;
+
+        const words = await db.select().from(wordTable).where(eq(wordTable.wordlistId, wordlistId));
+
+        console.log('words', words);
+
+        const inputQuizSet = words.map((word) => ({
+          front: word.word, // or word.word, adjust as needed
+          back: word.meaning, // or word.meaning, adjust as needed
+          progress: 0,
+          sentenceFrom: '',
+          due: 0,
+          quizSetId: quizSetId,
+        }));
+
+        if (words.length > 0) {
+          await db.insert(quizTable).values(inputQuizSet);
+        }
+
+        return c.json({ success: true, quizSetId: quizSetId });
       } catch (err) {
         throw new HTTPException(500, { message: 'Failed to create quiz set' });
       }
     },
-  );
+  )
+  .get('/', async (c) => {
+    const userId = c.get('userId');
+    if (!userId) {
+      throw new HTTPException(401, { message: 'Unauthorized' });
+    }
+    try {
+      const quizSets = await db.select().from(quizSetTable).where(eq(quizSetTable.maker, userId));
+      return c.json(quizSets);
+    } catch (err) {
+      throw new HTTPException(500, { message: 'Failed to fetch quiz sets' });
+    }
+  });
 
 export default app;
