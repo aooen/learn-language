@@ -8,32 +8,37 @@ import wordlist from './routes/wordlist';
 import words from './routes/words';
 import mediaInfo from './routes/mediaInfo';
 import quizSet from './routes/quizSet';
+import upload from './routes/upload';
+import friends from './routes/friends';
 import type { Env } from './types/hono';
-
+import { serveStatic } from 'hono/bun';
 import './startup';
 
-const app = new Hono<Env>()
-  .use(cors())
-  .use('*', async (c, next) => {
-    // Skip JWT validation for user routes
-    const path = c.req.path;
-    if (path === '/user/login' || path === '/user/signup') {
-      return await next();
-    }
+const app = new Hono<Env>().use(cors()).use('*', async (c, next) => {
+  // Skip JWT validation for user routes
+  const path = c.req.path;
 
-    // Apply JWT middleware for other routes
-    return jwt({
-      secret: process.env.JWT_SECRET!,
-    })(c, next);
-  })
-  .use(async (c, next) => {
-    // Only set userId and locale if JWT was processed
-    if (c.get('jwtPayload')) {
-      c.set('userId', c.get('jwtPayload').sub);
-      c.set('locale', c.get('jwtPayload').targetLang);
-    }
-    await next();
-  });
+  if (path === '/uploads' || path.startsWith('/uploads/')) {
+    return await next();
+  }
+
+  if (path === '/user/login' || path === '/user/signup') {
+    return await next();
+  }
+
+  // Apply JWT middleware for other routes
+  return jwt({
+    secret: process.env.JWT_SECRET!,
+  })(c, next);
+});
+app.use('/uploads/*', serveStatic({ root: './' })).use(async (c, next) => {
+  // Only set userId and locale if JWT was processed
+  if (c.get('jwtPayload')) {
+    c.set('userId', c.get('jwtPayload').sub);
+    c.set('locale', c.get('jwtPayload').targetLang);
+  }
+  await next();
+});
 
 const routes = app
   .route('/collect', collect)
@@ -41,7 +46,9 @@ const routes = app
   .route('/wordlist', wordlist)
   .route('/words', words)
   .route('/mediaInfo', mediaInfo)
-  .route('/quizSet', quizSet);
+  .route('/quizSet', quizSet)
+  .route('/uploads', upload)
+  .route('/friends', friends);
 
 export type AppType = typeof routes;
 
