@@ -7,8 +7,8 @@ export const quizSetLogTable = mysqlTable('quizSetLog', {
   quizSetId: int()
     .references(() => quizSetTable.id, { onDelete: 'cascade' })
     .notNull(),
-  study_date: datetime().notNull(),
-  learned_quizId: int()
+  studyDate: datetime().notNull(),
+  learnedQuizId: int()
     .references(() => quizTable.id, { onDelete: 'cascade' })
     .notNull(),
 });

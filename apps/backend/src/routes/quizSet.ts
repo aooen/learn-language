@@ -80,7 +80,7 @@ const app = new Hono<Env>()
         console.log('words', words);
         // const inputQuizSet;
 
-        if (quizSetId != undefined) {
+        if (quizSetId !== undefined) {
           const inputQuizSet = words.map((word) => ({
             front: word.word, // or word.word, adjust as needed
             back: word.meaning, // or word.meaning, adjust as needed
