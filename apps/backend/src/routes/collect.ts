@@ -11,6 +11,7 @@ import type { Env } from '~/types/hono';
 import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
+import { crawlMeanings } from '~/crawler/daum-dict';
 
 const stemmer = natural.PorterStemmer;
 
@@ -51,16 +52,35 @@ const app = new Hono<Env>().post(
 
         const wordList = line.split(/\W+/).filter(Boolean);
         for (const w of wordList) {
-          const stem = stemmer.stem(w.toLowerCase());
+          if (typeof w !== 'string') {
+            console.warn('❌ 비문자열 스킵:', w);
+            continue;
+          }
+
+          const lower = w.toLowerCase().trim();
+          if (!/^[a-zA-Z]{2,}$/.test(lower)) {
+            console.warn('❌ 유효하지 않은 단어 스킵:', lower);
+            continue;
+          }
+
+          const stem = stemmer.stem(lower);
           stemCount[stem] = (stemCount[stem] || 0) + 1;
         }
       }
 
+      const stemWords = Object.keys(stemCount);
+      const filteredWords = stemWords.filter((w) => /^[a-zA-Z]{2,}$/.test(w));
+
+      console.log('🟡 stemWords:', stemWords);
+      console.log('🌐 Daum 크롤링 시작...');
+      const meaningMap = await crawlMeanings(filteredWords);
+      console.log('✅ Daum 크롤링 완료:', Object.keys(meaningMap).length);
+
       await db.insert(wordTable).values(
-        Object.entries(stemCount).map(([stem, count]) => ({
+        stemWords.map((stem): typeof wordTable.$inferInsert => ({
           word: stem,
-          meaning: '',
-          count,
+          meaning: meaningMap[stem] ?? '',
+          count: stemCount[stem] ?? 0,
           frequency: 0,
           wordlistId,
         })),
