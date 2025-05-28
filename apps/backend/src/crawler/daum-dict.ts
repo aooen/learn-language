@@ -40,8 +40,7 @@ export async function crawlMeanings(words: string[]): Promise<Record<string, str
     try {
       result[word] = await crawlMeaning(word);
     } catch (err) {
-      console.error(`❌ ${word} 뜻 가져오기 실패`, err);
-      result[word] = '뜻 없음';
+      result[word] = '';
     }
 
     // Daum에서 너무 빨리 여러 요청 보내면 차단될 수 있으므로 딜레이 추가

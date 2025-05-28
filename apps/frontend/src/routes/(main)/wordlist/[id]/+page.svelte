@@ -77,14 +77,10 @@
             <td><input type="checkbox" bind:checked={word.selected} /></td>
             <td>{word.word}</td>
             <td>
-              {#if word.meaning === ''}
-                <span class="no-meaning">()</span>
+              {#if word.meaning === '뜻 없음'}
+                <span class="no-meaning">(뜻 없음)</span>
               {:else}
-                {word.meaning
-                  .split(',')
-                  .slice(0, 3)
-                  .map((m) => m.trim())
-                  .join(', ')}
+                {word.meaning}
               {/if}
             </td>
             <td>{word.count}</td>

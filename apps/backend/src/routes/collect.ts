@@ -52,14 +52,14 @@ const app = new Hono<Env>().post(
 
         const wordList = line.split(/\W+/).filter(Boolean);
         for (const w of wordList) {
+          // 비문자열 스킵
           if (typeof w !== 'string') {
-            console.warn('❌ 비문자열 스킵:', w);
             continue;
           }
 
           const lower = w.toLowerCase().trim();
+          // 유효하지 않은 단어 스킵
           if (!/^[a-zA-Z]{2,}$/.test(lower)) {
-            console.warn('❌ 유효하지 않은 단어 스킵:', lower);
             continue;
           }
 
