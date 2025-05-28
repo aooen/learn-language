@@ -9,6 +9,7 @@ import { wordTable } from '~/schemas/word';
 import { db } from '~/utils/db';
 import { zValidator } from '~/utils/validator-wrapper';
 import type { Env } from '~/types/hono';
+import { quizSetLogTable } from '~/schemas/quizSetLog';
 
 // TODO: move to shared
 const Quiz = z.object({
@@ -41,6 +42,11 @@ const app = new Hono<Env>()
           .update(quizTable)
           .set({ progress: q.progress, due: q.due })
           .where(eq(quizTable.id, q.id));
+        await db.insert(quizSetLogTable).values({
+          quizSetId: q.quizSetId,
+          study_date: new Date(),
+          learned_quizId: q.id,
+        });
       }
       return c.json({ success: true });
     } catch {}
