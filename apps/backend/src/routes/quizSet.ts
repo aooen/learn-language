@@ -44,8 +44,8 @@ const app = new Hono<Env>()
           .where(eq(quizTable.id, q.id));
         await db.insert(quizSetLogTable).values({
           quizSetId: q.quizSetId,
-          study_date: new Date(),
-          learned_quizId: q.id,
+          studyDate: new Date(),
+          learnedQuizId: q.id,
         });
       }
       return c.json({ success: true });
