@@ -9,6 +9,8 @@ import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
 import { verify } from 'hono/jwt';
+import { writeFileSync, mkdirSync } from 'fs';
+import { randomUUID } from 'crypto';
 
 const app = new Hono<Env>()
   .post(
@@ -161,6 +163,26 @@ const app = new Hono<Env>()
 
       return c.text('비밀번호가 성공적으로 변경되었습니다');
     },
-  );
+  )
+
+  .put('/me/image', zValidator('json', z.object({ imageUrl: z.string().url() })), async (c) => {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return c.text('Unauthorized', 401);
+
+    let userId: string;
+    try {
+      const payload = await verify(token, process.env.JWT_SECRET!);
+      userId = payload.sub as string;
+    } catch {
+      return c.text('Invalid token', 401);
+    }
+
+    const { imageUrl } = c.req.valid('json');
+    await db
+      .update(userTable)
+      .set({ image: imageUrl })
+      .where(eq(userTable.id, Number(userId)));
+    return c.text('프로필 이미지가 성공적으로 변경되었습니다');
+  });
 
 export default app;

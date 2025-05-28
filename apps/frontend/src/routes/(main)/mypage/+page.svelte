@@ -2,12 +2,16 @@
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
 
-  let user = { id: '', username: '', image: '' };
+  let user = { id: '', username: '', image: '', motherLang: '', targetLang: '' };
   let currentPw = '';
   let newPw = '';
   let confirmPw = '';
-  let msg = '';
-  let error = '';
+  let msg: string | null = null;
+  let error: string | null = null;
+
+  let selectedFile: File | null = null;
+  let preview: string = '';
+  let fileInput: HTMLInputElement | null = null;
 
   onMount(async () => {
     try {
@@ -15,6 +19,7 @@
       if (res.ok) {
         const data = await res.json();
         user = data.user;
+        preview = user.image;
       } else {
         error = '사용자 정보를 불러오는 데 실패했습니다';
       }
@@ -25,7 +30,7 @@
   });
 
   async function changePassword() {
-    error = msg = '';
+    error = msg = null;
 
     if (newPw !== confirmPw) {
       error = '새 비밀번호가 일치하지 않습니다';
@@ -52,22 +57,91 @@
       error = '서버와 통신 중 오류가 발생했습니다';
     }
   }
+
+  function handleFileChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    selectedFile = file;
+    preview = URL.createObjectURL(file);
+    uploadImage();
+  }
+
+  async function uploadImage() {
+    error = null;
+
+    if (!selectedFile) {
+      error = '파일을 선택해주세요';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch('/uploads', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        error = await res.text();
+        return;
+      }
+
+      const { url } = await res.json();
+      const absUrl = `${location.origin}${url}`;
+
+      const res2 = await client.user.me.image.$put({
+        json: { imageUrl: absUrl },
+      });
+
+      if (res2.ok) {
+        user.image = absUrl;
+        preview = absUrl;
+        selectedFile = null;
+      } else {
+        error = await res2.text();
+      }
+    } catch (e) {
+      console.error(e);
+      error = '이미지 업로드 중 오류가 발생했습니다';
+    }
+  }
 </script>
 
-<div class="mypage-container">
+<div class="mypage-wrapper">
   <h2>마이페이지</h2>
 
   {#if error}
-    <p class="error">{error}</p>
+    <div class="toast error">{error}</div>
   {/if}
   {#if msg}
-    <p class="success">{msg}</p>
+    <div class="toast success">{msg}</div>
   {/if}
 
-  <section class="profile">
-    <h3>내 정보</h3>
-    <p>아이디: <strong>{user.username}</strong></p>
-    <div class="stats">
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="card profile-card">
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <div class="image-wrapper" on:click={() => fileInput?.click()}>
+      <img src={preview || '/default-profile.png'} alt="프로필 이미지" class="profile-image hoverable" />
+      <p class="hint">클릭하여 프로필 이미지 수정</p>
+    </div>
+    <input
+      type="file"
+      accept="image/*"
+      bind:this={fileInput}
+      style="display: none"
+      on:change={handleFileChange}
+    />
+
+    <div class="info-grid">
+      <div><strong>아이디</strong><br />{user.username}</div>
+      <div><strong>모국어</strong><br />{user.motherLang}</div>
+      <div><strong>목표 언어</strong><br />{user.targetLang}</div>
+    </div>
+
+    <div class="stat-grid">
       <div class="stat-item">
         <h4>총 학습 단어</h4>
         <p>--</p>
@@ -77,9 +151,9 @@
         <p>--</p>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="password-change">
+  <div class="card">
     <h3>비밀번호 변경</h3>
     <form on:submit|preventDefault={changePassword}>
       <label>
@@ -96,29 +170,52 @@
       </label>
       <button type="submit">변경하기</button>
     </form>
-  </section>
+  </div>
 </div>
 
 <style>
-  .mypage-container {
-    max-width: 480px;
+  .mypage-wrapper {
+    max-width: 600px;
     margin: 2rem auto;
-    padding: 1.5rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .card {
     background: #fff;
-  }
-
-  h2 {
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-
-  section {
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
     margin-bottom: 2rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   }
 
-  .stats {
+  .image-wrapper {
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    margin-bottom: 0.5rem;
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .info-grid {
+    display: flex;
+    justify-content: space-between;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+  }
+
+  .stat-grid {
     display: flex;
     gap: 1rem;
     margin-top: 1rem;
@@ -130,17 +227,7 @@
     border: 1px solid #eee;
     border-radius: 6px;
     text-align: center;
-  }
-
-  .stat-item h4 {
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
-    color: #555;
-  }
-
-  .stat-item p {
-    font-size: 1.25rem;
-    font-weight: bold;
+    background-color: #fafafa;
   }
 
   form {
@@ -155,7 +242,7 @@
     font-size: 0.9rem;
   }
 
-  input {
+  input[type="password"] {
     padding: 0.5rem;
     margin-top: 0.25rem;
     border: 1px solid #ccc;
@@ -165,7 +252,7 @@
   button {
     padding: 0.75rem;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: #0070f3;
     color: #fff;
     font-weight: bold;
@@ -176,15 +263,22 @@
     background-color: #005bb5;
   }
 
-  .error {
-    color: #e00;
-    text-align: center;
-    margin-bottom: 1rem;
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    color: white;
+    z-index: 1000;
   }
 
-  .success {
-    color: #007e33;
-    text-align: center;
-    margin-bottom: 1rem;
+  .toast.success {
+    background-color: #007e33;
+  }
+
+  .toast.error {
+    background-color: #e00;
   }
 </style>
