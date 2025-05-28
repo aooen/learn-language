@@ -281,7 +281,12 @@
       }}
     >
       {#if queue.heap.length != 0}
-        <Card front={queue.heap[0].front} back={queue.heap[0].back} {flipped} progress={queue.heap[0].progress}></Card>
+        <Card
+          front={queue.heap[0].front}
+          back={queue.heap[0].back}
+          {flipped}
+          progress={queue.heap[0].progress}
+        ></Card>
       {:else}
         <Card front="Loading" back="Loading" {flipped} progress={0}></Card>
       {/if}
@@ -305,7 +310,7 @@
   <Card front="All Done!" back="We are updating your progress." {flipped} progress={0}></Card>
 {/if}
 
-<button class="go-back" onclick={() => goto('/quizs/')}>Go Back</button>
+<button class="go-back" onclick={() => goto('/quizzes/')}>Go Back</button>
 
 <style>
   .cardEventBox {

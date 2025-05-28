@@ -22,11 +22,27 @@
       }
     } catch (err) {
       errorMsg = '서버와 통신 중 오류가 발생했습니다.';
+      console.error('퀴즈 세트 목록 불러오기 실패:', err);
     }
   }
 
   onMount(fetchQuizSets);
 </script>
+
+{#if errorMsg}
+  <div class="error">{errorMsg}</div>
+{:else if quizSets.length === 0}
+  <div>퀴즈 세트가 없습니다. 단어장에서 퀴즈 세트를 만들어보세요.</div>
+{:else}
+  <ul>
+    {#each quizSets as set (set.id)}
+      <li>
+        <a href={`/quizzes/${set.id}`}>QuizSet #{set.id}</a>
+        <span>(Wordlist: {set.wordlistId})</span>
+      </li>
+    {/each}
+  </ul>
+{/if}
 
 <style>
   ul {
@@ -38,15 +54,17 @@
   li {
     background: #f9fafb;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     margin-bottom: 18px;
     padding: 20px 28px;
     display: flex;
     align-items: center;
-    transition: box-shadow 0.2s, transform 0.2s;
+    transition:
+      box-shadow 0.2s,
+      transform 0.2s;
   }
   li:hover {
-    box-shadow: 0 6px 24px rgba(37,99,235,0.12);
+    box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
     transform: translateY(-2px) scale(1.02);
   }
   a {
@@ -66,18 +84,3 @@
     font-size: 1rem;
   }
 </style>
-
-{#if errorMsg}
-  <div class="error">{errorMsg}</div>
-{:else if quizSets.length === 0}
-  <div>퀴즈 세트가 없습니다. 단어장에서 퀴즈 세트를 만들어보세요.</div>
-{:else}
-  <ul>
-    {#each quizSets as set (set.id)}
-      <li>
-        <a href={`/quizs/${set.id}`}>QuizSet #{set.id}</a>
-        <span>(Wordlist: {set.wordlistId})</span>
-      </li>
-    {/each}
-  </ul>
-{/if}

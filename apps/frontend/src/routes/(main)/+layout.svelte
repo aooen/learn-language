@@ -28,8 +28,8 @@
         return 'home';
       case page.url.pathname.startsWith('/wordlist'):
         return 'wordlist';
-      case page.url.pathname.startsWith('/quizs'):
-        return 'quizs';
+      case page.url.pathname.startsWith('/quizzes'):
+        return 'quizzes';
     }
     return null;
   });
@@ -47,7 +47,7 @@
       <span class="tooltiptext">단어장</span>
     </a>
 
-    <a class={clsx('menu', { selected: menu === 'quizs' })} href="/quizs">
+    <a class={clsx('menu', { selected: menu === 'quizzes' })} href="/quizzes">
       <HelpCircleOutlineIcon class="icon" />
       <span class="tooltiptext">퀴즈</span>
     </a>
