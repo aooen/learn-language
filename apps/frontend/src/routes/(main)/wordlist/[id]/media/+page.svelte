@@ -165,8 +165,7 @@
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         userHasScrolled = false;
-        // 3초 후 현재 자막 위치로 자동 스크롤 복귀
-        const activeElem = document.getElementById(`subtitle-${activeSubIndex}`);
+        const activeElem = document.getElementById(`subtitle-${activeSubIndex}`); // 3초 후 현재 자막 위치로 자동 스크롤 복귀
         if (activeElem && subtitleContainer) {
           const containerHeight = subtitleContainer.clientHeight;
           const elemOffset =
