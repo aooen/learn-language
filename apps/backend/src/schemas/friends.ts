@@ -1,4 +1,4 @@
-import { int, mysqlTable } from 'drizzle-orm/mysql-core';
+import { int, mysqlTable, primaryKey } from 'drizzle-orm/mysql-core';
 import { userTable } from './user';
 
 export const friendsTable = mysqlTable(
@@ -12,7 +12,5 @@ export const friendsTable = mysqlTable(
       .notNull()
       .references(() => userTable.id, { onDelete: 'cascade' }),
   },
-  (table) => ({
-    pk: [table.userId, table.friendId],
-  }),
+  (table) => [primaryKey({ columns: [table.userId, table.friendId] })],
 );

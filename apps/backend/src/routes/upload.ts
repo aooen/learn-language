@@ -2,13 +2,12 @@ import { Hono } from 'hono';
 import { mkdirSync, writeFileSync } from 'fs';
 import { randomUUID } from 'crypto';
 import { extname } from 'path';
-
-const upload = new Hono();
+import type { Env } from '../types/hono.ts';
 
 const UPLOAD_DIR = './uploads';
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
-upload.post('/', async (c) => {
+const app = new Hono<Env>().post('/', async (c) => {
   const body = await c.req.parseBody();
   const file = body['file'];
 
@@ -25,4 +24,4 @@ upload.post('/', async (c) => {
   return c.json({ url: `/uploads/${filename}` });
 });
 
-export default upload;
+export default app;

@@ -6,12 +6,12 @@
   type Friend = {
     id: number;
     username: string;
-    image?: string;
+    image?: string | null;
   };
 
-  let friends: Friend[] = [];
-  let error = '';
-  let newFriendUsername = '';
+  let friends = $state<Friend[]>([]);
+  let error = $state('');
+  let newFriendUsername = $state('');
 
   async function fetchFriends() {
     try {
@@ -40,7 +40,8 @@
         await fetchFriends();
         newFriendUsername = '';
       } else {
-        error = await res.text();
+        const data = (await res.json()) as { success: boolean; message?: string };
+        error = data.message ?? '친구 추가에 실패했습니다';
       }
     } catch {
       error = '친구 추가에 실패했습니다';
@@ -78,15 +79,11 @@
       <div class="friend-card">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="left" on:click={() => viewFriend(friend.id)}>
-          <img
-            class="avatar"
-            src={friend.image || '/default-profile.png'}
-            alt="프로필 이미지"
-          />
+        <div class="left" onclick={() => viewFriend(friend.id)}>
+          <img class="avatar" src={friend.image || '/default-profile.jpg'} alt="프로필 이미지" />
           <span>{friend.username}</span>
         </div>
-<button class="delete-button" on:click={() => removeFriend(friend.id)}>삭제</button>
+        <button class="delete-button" onclick={() => removeFriend(friend.id)}>삭제</button>
       </div>
     {/each}
   </div>
@@ -101,11 +98,11 @@
       bind:value={newFriendUsername}
       placeholder="친구 아이디 입력"
       class="add-input"
-      on:keydown={(e) => {
+      onkeydown={(e) => {
         if (e.key === 'Enter') addFriend();
       }}
     />
-    <button class="add-button" on:click={addFriend}>+ 친구 추가</button>
+    <button class="add-button" onclick={addFriend}>+ 친구 추가</button>
   </div>
 </div>
 
@@ -154,21 +151,20 @@
   }
 
   .delete-button {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  border: 1px solid #5a78f0;
-  border-radius: 6px;
-  background: transparent;
-  color: #5a78f0;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+    padding: 0.4rem 0.75rem;
+    font-size: 0.9rem;
+    border: 1px solid #5a78f0;
+    border-radius: 6px;
+    background: transparent;
+    color: #5a78f0;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
 
-.delete-button:hover {
-  background: rgba(90, 120, 240, 0.1);
-}
-
+  .delete-button:hover {
+    background: rgba(90, 120, 240, 0.1);
+  }
 
   .add-form {
     display: flex;

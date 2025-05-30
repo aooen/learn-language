@@ -2,16 +2,23 @@
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
 
-  let user = { id: '', username: '', image: '', motherLang: '', targetLang: '' };
-  let currentPw = '';
-  let newPw = '';
-  let confirmPw = '';
-  let msg: string | null = null;
-  let error: string | null = null;
+  let user = $state({
+    id: '',
+    username: '',
+    image: '',
+    motherLang: '',
+    targetLang: '',
+  });
 
-  let selectedFile: File | null = null;
-  let preview: string = '';
-  let fileInput: HTMLInputElement | null = null;
+  let currentPw = $state('');
+  let newPw = $state('');
+  let confirmPw = $state('');
+  let msg = $state<string | null>(null);
+  let error = $state<string | null>(null);
+
+  let selectedFile = $state<File | null>(null);
+  let preview = $state('');
+  let fileInput = $state<HTMLInputElement | null>(null);
 
   onMount(async () => {
     try {
@@ -29,11 +36,25 @@
     }
   });
 
+  function showMsg(message: string) {
+    msg = message;
+    setTimeout(() => {
+      msg = null;
+    }, 2000);
+  }
+
+  function showError(message: string) {
+    error = message;
+    setTimeout(() => {
+      error = null;
+    }, 2000);
+  }
+
   async function changePassword() {
     error = msg = null;
 
     if (newPw !== confirmPw) {
-      error = '새 비밀번호가 일치하지 않습니다';
+      showError('새 비밀번호가 일치하지 않습니다');
       return;
     }
 
@@ -46,11 +67,11 @@
       });
 
       if (res.ok) {
-        msg = '비밀번호가 변경되었습니다';
+        showMsg('비밀번호가 변경되었습니다');
         currentPw = newPw = confirmPw = '';
       } else {
         const text = await res.text();
-        error = text || '비밀번호 변경에 실패했습니다';
+        showError(text || '비밀번호 변경에 실패했습니다');
       }
     } catch (e) {
       console.error(e);
@@ -123,8 +144,12 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="card profile-card">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="image-wrapper" on:click={() => fileInput?.click()}>
-      <img src={preview || '/default-profile.png'} alt="프로필 이미지" class="profile-image hoverable" />
+    <div class="image-wrapper" onclick={() => fileInput?.click()}>
+      <img
+        src={preview || '/default-profile.png'}
+        alt="프로필 이미지"
+        class="profile-image hoverable"
+      />
       <p class="hint">클릭하여 프로필 이미지 수정</p>
     </div>
     <input
@@ -132,7 +157,7 @@
       accept="image/*"
       bind:this={fileInput}
       style="display: none"
-      on:change={handleFileChange}
+      onchange={handleFileChange}
     />
 
     <div class="info-grid">
@@ -155,7 +180,7 @@
 
   <div class="card">
     <h3>비밀번호 변경</h3>
-    <form on:submit|preventDefault={changePassword}>
+    <form onsubmit={changePassword}>
       <label>
         현재 비밀번호
         <input type="password" bind:value={currentPw} required />
@@ -242,7 +267,7 @@
     font-size: 0.9rem;
   }
 
-  input[type="password"] {
+  input[type='password'] {
     padding: 0.5rem;
     margin-top: 0.25rem;
     border: 1px solid #ccc;

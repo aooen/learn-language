@@ -14,31 +14,32 @@ import type { Env } from './types/hono';
 import { serveStatic } from 'hono/bun';
 import './startup';
 
-const app = new Hono<Env>().use(cors()).use('*', async (c, next) => {
-  // Skip JWT validation for user routes
-  const path = c.req.path;
+const app = new Hono<Env>()
+  .use(cors())
+  .use('*', async (c, next) => {
+    // Skip JWT validation for user routes
+    const path = c.req.path;
 
-  if (path === '/uploads' || path.startsWith('/uploads/')) {
-    return await next();
-  }
-
-  if (path === '/user/login' || path === '/user/signup') {
-    return await next();
-  }
-
-  // Apply JWT middleware for other routes
-  return jwt({
-    secret: process.env.JWT_SECRET!,
-  })(c, next);
-});
-app.use('/uploads/*', serveStatic({ root: './' })).use(async (c, next) => {
-  // Only set userId and locale if JWT was processed
-  if (c.get('jwtPayload')) {
-    c.set('userId', c.get('jwtPayload').sub);
-    c.set('locale', c.get('jwtPayload').targetLang);
-  }
-  await next();
-});
+    switch (true) {
+      case path.startsWith('/uploads'):
+      case path === '/user/login':
+      case path === '/user/signup':
+        return await next();
+    }
+    // Apply JWT middleware for other routes
+    return jwt({
+      secret: process.env.JWT_SECRET!,
+    })(c, next);
+  })
+  .use('/uploads/*', serveStatic({ root: './' }))
+  .use(async (c, next) => {
+    // Only set userId and locale if JWT was processed
+    if (c.get('jwtPayload')) {
+      c.set('userId', c.get('jwtPayload').sub);
+      c.set('locale', c.get('jwtPayload').targetLang);
+    }
+    await next();
+  });
 
 const routes = app
   .route('/collect', collect)

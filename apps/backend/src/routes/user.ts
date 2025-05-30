@@ -9,8 +9,6 @@ import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
 import { verify } from 'hono/jwt';
-import { writeFileSync, mkdirSync } from 'fs';
-import { randomUUID } from 'crypto';
 
 const app = new Hono<Env>()
   .post(
@@ -128,16 +126,8 @@ const app = new Hono<Env>()
       }),
     ),
     async (c) => {
-      const token = c.req.header('Authorization')?.replace('Bearer ', '');
-      if (!token) return c.text('Unauthorized', 401);
-
-      let userId: string;
-      try {
-        const payload = await verify(token, process.env.JWT_SECRET!);
-        userId = payload.sub as string;
-      } catch {
-        return c.text('Invalid token', 401);
-      }
+      const userId = c.get('userId');
+      if (!userId) return c.text('Unauthorized', 401);
 
       const { currentPassword, newPassword } = c.req.valid('json');
 
@@ -166,16 +156,8 @@ const app = new Hono<Env>()
   )
 
   .put('/me/image', zValidator('json', z.object({ imageUrl: z.string().url() })), async (c) => {
-    const token = c.req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return c.text('Unauthorized', 401);
-
-    let userId: string;
-    try {
-      const payload = await verify(token, process.env.JWT_SECRET!);
-      userId = payload.sub as string;
-    } catch {
-      return c.text('Invalid token', 401);
-    }
+    const userId = c.get('userId');
+    if (!userId) return c.text('Unauthorized', 401);
 
     const { imageUrl } = c.req.valid('json');
     await db

@@ -4,14 +4,14 @@
   import { client } from '$lib/utils/api';
   import { get } from 'svelte/store';
 
-  let user = {
+  let error = $state('');
+  let user = $state({
     id: 0,
     username: '',
     image: '',
     motherLang: '',
     targetLang: '',
-  };
-  let error = '';
+  });
 
   onMount(async () => {
     const id = get(page).params.id;
@@ -23,8 +23,7 @@
       } else {
         error = await res.text();
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       error = '친구 정보를 불러오는 데 실패했습니다';
     }
   });
