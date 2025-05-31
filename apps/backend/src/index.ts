@@ -31,7 +31,13 @@ const app = new Hono<Env>()
       secret: process.env.JWT_SECRET!,
     })(c, next);
   })
-  .use('/uploads/*', serveStatic({ root: './' }))
+  .use(
+    '/uploads/*',
+    serveStatic({
+      root: './uploads',
+      rewriteRequestPath: (path) => path.replace(/^\/uploads/, ''),
+    }),
+  )
   .use(async (c, next) => {
     // Only set userId and locale if JWT was processed
     if (c.get('jwtPayload')) {

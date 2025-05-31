@@ -8,7 +8,6 @@ import { userTable } from '~/schemas/user';
 import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
-import { verify } from 'hono/jwt';
 
 const app = new Hono<Env>()
   .post(
@@ -164,7 +163,7 @@ const app = new Hono<Env>()
       .update(userTable)
       .set({ image: imageUrl })
       .where(eq(userTable.id, Number(userId)));
-    return c.text('프로필 이미지가 성공적으로 변경되었습니다');
+    return c.json({ success: true });
   });
 
 export default app;

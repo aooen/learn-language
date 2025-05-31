@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { extname } from 'path';
 import type { Env } from '../types/hono.ts';
 
-const UPLOAD_DIR = './uploads';
+const UPLOAD_DIR = 'uploads';
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const app = new Hono<Env>().post('/', async (c) => {

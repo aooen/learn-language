@@ -13,6 +13,12 @@
     targetLang: '',
   });
 
+  function getImageUrl(path: string | null | undefined): string {
+    if (!path) return '/default-profile.png';
+    if (path.startsWith('http')) return path;
+    return `${import.meta.env.VITE_API_URL}${path}`;
+  }
+
   onMount(async () => {
     const id = get(page).params.id;
     try {
@@ -37,7 +43,7 @@
   {:else}
     <section class="profile">
       <div class="image-wrapper">
-        <img src={user.image || '/default-profile.png'} alt="프로필 이미지" class="profile-image" />
+        <img class="profile-image" src={getImageUrl(user.image)} alt="프로필 이미지" />
       </div>
 
       <div class="lang-grid">

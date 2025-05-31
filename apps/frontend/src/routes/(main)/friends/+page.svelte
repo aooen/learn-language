@@ -13,6 +13,12 @@
   let error = $state('');
   let newFriendUsername = $state('');
 
+  function getImageUrl(path: string | null | undefined): string {
+    if (!path) return '/default-profile.png';
+    if (path.startsWith('http')) return path;
+    return `${import.meta.env.VITE_API_URL}${path}`;
+  }
+
   async function fetchFriends() {
     try {
       const res = await client.friends.$get();
@@ -80,7 +86,7 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="left" onclick={() => viewFriend(friend.id)}>
-          <img class="avatar" src={friend.image || '/default-profile.jpg'} alt="프로필 이미지" />
+          <img class="avatar" src={getImageUrl(friend.image)} alt="프로필 이미지" />
           <span>{friend.username}</span>
         </div>
         <button class="delete-button" onclick={() => removeFriend(friend.id)}>삭제</button>

@@ -100,9 +100,12 @@
     formData.append('file', selectedFile);
 
     try {
-      const res = await fetch('/uploads', {
-        method: 'POST',
-        body: formData,
+      const res = await client.uploads.$post({
+        form: {
+          file: new File([selectedFile], selectedFile.name, {
+            type: selectedFile.type,
+          }),
+        },
       });
 
       if (!res.ok) {
