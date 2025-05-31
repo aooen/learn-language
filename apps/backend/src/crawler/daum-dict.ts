@@ -1,9 +1,10 @@
-import { JSDOM } from 'jsdom';
 import { fetch } from 'undici';
-import { setTimeout } from 'timers/promises';
+import * as cheerio from 'cheerio';
+import { JSDOM } from 'jsdom';
+import pLimit from 'p-limit';
 
 // 단어 하나에 대해 Daum 사전에서 뜻을 크롤링
-export async function crawlMeaning(word: string): Promise<string> {
+export async function crawlMeaning(word: string): Promise<string | null> {
   try {
     const res = await fetch(`https://dic.daum.net/search.do?q=${encodeURIComponent(word)}`, {
       headers: {
@@ -16,35 +17,74 @@ export async function crawlMeaning(word: string): Promise<string> {
     if (!res.ok) throw new Error(`HTTP 오류: ${res.status}`);
 
     const html = await res.text();
-    const dom = new JSDOM(html);
-    const doc = dom.window.document;
+    const $ = cheerio.load(html);
 
     // Daum 사전에서 뜻이 있는 부분 선택
-    const results = Array.from(doc.querySelectorAll('.list_search .txt_search'))
-      .map((el) => (el as HTMLElement).textContent?.trim())
-      .filter((text): text is string => !!text);
+    const results = $('.list_search .txt_search')
+      .map((_, el) => $(el).text().trim())
+      .get()
+      .filter(Boolean);
 
     // 3개까지만 잘라서 join
-    const trimmed = results.slice(0, 3).join(', ');
-    return trimmed || '뜻 없음';
+    return results.length > 0 ? results.slice(0, 3).join(', ') : null;
   } catch (err) {
-    console.error(`[크롤링 실패: ${word}]`, err);
-    return '뜻 없음';
+    console.error(`[크롤링 실패: ${word}]`);
+    return null;
   }
 }
 
-export async function crawlMeanings(words: string[]): Promise<Record<string, string>> {
-  const result: Record<string, string> = {};
+async function crawlMeaningJSDOM(word: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://dic.daum.net/search.do?q=${encodeURIComponent(word)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8',
+      },
+    });
 
-  for (const word of words) {
-    try {
-      result[word] = await crawlMeaning(word);
-    } catch (err) {
-      result[word] = '';
+    if (!res.ok) throw new Error(`HTTP 오류: ${res.status}`);
+
+    const html = await res.text();
+    const dom = new JSDOM(html);
+    const doc = dom.window.document;
+
+    const elements = Array.from(doc.querySelectorAll('.list_search .txt_search'));
+    const texts = elements
+      .map((el) => el.textContent?.trim())
+      .filter((text): text is string => !!text);
+
+    return texts.length > 0 ? texts.slice(0, 3).join(', ') : null;
+  } catch (err) {
+    console.error(`[2차(JSDOM) 크롤링 실패: ${word}]`);
+    return null;
+  }
+}
+
+export async function crawlMeanings(words: string[]): Promise<Record<string, string | null>> {
+  const result: Record<string, string | null> = {};
+  const limit = pLimit(3);
+
+  const tasks = words.map((word) =>
+    limit(async () => {
+      const meaning = await crawlMeaning(word);
+      result[word] = meaning;
+      await new Promise((r) => setTimeout(r, 700));
+    }),
+  );
+  await Promise.all(tasks);
+
+  const failedWords = Object.entries(result)
+    .filter(([_, meaning]) => meaning === null)
+    .map(([word]) => word);
+
+  if (failedWords.length > 0) {
+    console.log(` 2차(JSDOM) 크롤링 시도: ${failedWords.length} 단어`);
+
+    for (const word of failedWords) {
+      const meaning = await crawlMeaningJSDOM(word);
+      result[word] = meaning;
+      await new Promise((r) => setTimeout(r, 300));
     }
-
-    // Daum에서 너무 빨리 여러 요청 보내면 차단될 수 있으므로 딜레이 추가
-    await setTimeout(300);
   }
 
   return result;

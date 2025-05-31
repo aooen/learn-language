@@ -52,11 +52,6 @@ const app = new Hono<Env>().post(
 
         const wordList = line.split(/\W+/).filter(Boolean);
         for (const w of wordList) {
-          // 비문자열 스킵
-          if (typeof w !== 'string') {
-            continue;
-          }
-
           const lower = w.toLowerCase().trim();
           // 유효하지 않은 단어 스킵
           if (!/^[a-zA-Z]{2,}$/.test(lower)) {
@@ -76,16 +71,21 @@ const app = new Hono<Env>().post(
       const meaningMap = await crawlMeanings(filteredWords);
       console.log('✅ Daum 크롤링 완료:', Object.keys(meaningMap).length);
 
+      const unknowns = filteredWords.filter((w) => meaningMap[w] == null);
+      if (unknowns.length > 0) {
+        console.warn('⚠️ 뜻을 찾지 못한 단어들:', unknowns);
+      }
+
       await db.insert(wordTable).values(
-        stemWords.map((stem): typeof wordTable.$inferInsert => ({
+        filteredWords.map((stem): typeof wordTable.$inferInsert => ({
           word: stem,
-          meaning: meaningMap[stem] ?? '',
+          meaning: meaningMap[stem],
           count: stemCount[stem] ?? 0,
           frequency: 0,
           wordlistId,
         })),
       );
-      return c.json({ success: true, wordlistId, count: Object.keys(stemCount).length });
+      return c.json({ success: true, wordlistId, count: filteredWords.length });
     }
     throw new HTTPException(400, { message: 'Invalid url' });
   },
