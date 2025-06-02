@@ -11,6 +11,7 @@ import type { Env } from '~/types/hono';
 import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
+import { crawlMeanings } from '~/crawler/daum-dict';
 
 const stemmer = natural.PorterStemmer;
 
@@ -51,21 +52,35 @@ const app = new Hono<Env>().post(
 
         const wordList = line.split(/\W+/).filter(Boolean);
         for (const w of wordList) {
-          const stem = stemmer.stem(w.toLowerCase());
+          const cleaned = w
+            .replace(/[^a-zA-Z]/g, '')
+            .toLowerCase()
+            .trim();
+          // 유효하지 않은 단어 스킵
+          if (cleaned.length < 2) {
+            continue;
+          }
+
+          const stem = stemmer.stem(cleaned);
           stemCount[stem] = (stemCount[stem] || 0) + 1;
         }
       }
 
+      const stemWords = Object.keys(stemCount);
+      const filteredWords = stemWords.filter((w) => /^[a-zA-Z]{2,}$/.test(w));
+
+      const meaningMap = await crawlMeanings(filteredWords);
+
       await db.insert(wordTable).values(
-        Object.entries(stemCount).map(([stem, count]) => ({
+        filteredWords.map((stem): typeof wordTable.$inferInsert => ({
           word: stem,
-          meaning: '',
-          count,
+          meaning: meaningMap[stem],
+          count: stemCount[stem] ?? 0,
           frequency: 0,
           wordlistId,
         })),
       );
-      return c.json({ success: true, wordlistId, count: Object.keys(stemCount).length });
+      return c.json({ success: true, wordlistId, count: filteredWords.length });
     }
     throw new HTTPException(400, { message: 'Invalid url' });
   },
