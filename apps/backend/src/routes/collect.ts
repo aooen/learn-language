@@ -69,15 +69,7 @@ const app = new Hono<Env>().post(
       const stemWords = Object.keys(stemCount);
       const filteredWords = stemWords.filter((w) => /^[a-zA-Z]{2,}$/.test(w));
 
-      console.log('🟡 stemWords:', stemWords);
-      console.log('🌐 Daum 크롤링 시작...');
       const meaningMap = await crawlMeanings(filteredWords);
-      console.log('✅ Daum 크롤링 완료:', Object.keys(meaningMap).length);
-
-      const unknowns = filteredWords.filter((w) => meaningMap[w] == null);
-      if (unknowns.length > 0) {
-        console.warn('⚠️ 뜻을 찾지 못한 단어들:', unknowns);
-      }
 
       await db.insert(wordTable).values(
         filteredWords.map((stem): typeof wordTable.$inferInsert => ({
