@@ -44,13 +44,14 @@
   </ul>
 {/if}
 
-<style>
+<style lang="scss">
   ul {
     list-style: none;
     padding: 0;
     margin: 32px auto 0 auto;
     max-width: 500px;
   }
+
   li {
     background: #f9fafb;
     border-radius: 12px;
@@ -62,11 +63,18 @@
     transition:
       box-shadow 0.2s,
       transform 0.2s;
+
+    span {
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    &:hover {
+      box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
+      transform: translateY(-2px) scale(1.02);
+    }
   }
-  li:hover {
-    box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
-    transform: translateY(-2px) scale(1.02);
-  }
+
   a {
     color: #2563eb;
     text-decoration: none;
@@ -74,13 +82,10 @@
     font-size: 1.15rem;
     margin-right: 12px;
     transition: color 0.2s;
-  }
-  a:hover {
-    color: #1e40af;
-    text-decoration: underline;
-  }
-  li span {
-    color: #64748b;
-    font-size: 1rem;
+
+    &:hover {
+      color: #1e40af;
+      text-decoration: underline;
+    }
   }
 </style>

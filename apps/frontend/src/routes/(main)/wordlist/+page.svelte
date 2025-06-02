@@ -156,7 +156,7 @@
   </div>
 {/if}
 
-<style>
+<style lang="scss">
   .container {
     max-width: 500px;
     margin: 0 auto;
@@ -222,9 +222,10 @@
     cursor: pointer;
     border-radius: 4px;
     transition: background 0.15s;
-  }
-  .delete:hover {
-    background: #fee2e2;
+
+    &:hover {
+      background: #fee2e2;
+    }
   }
 
   .add-button {

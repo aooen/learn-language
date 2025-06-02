@@ -113,6 +113,10 @@
       return this.label;
     }
 
+    toClassName(): string {
+      return this.toString().toLowerCase();
+    }
+
     static values(): ButtonType[] {
       return [ButtonType.Again, ButtonType.Hard, ButtonType.Good, ButtonType.Easy];
     }
@@ -154,58 +158,8 @@
     return typedQuizs;
   }
 
-  // ============================ Sample ======================
-  //  const sampleQuizzes: Quiz[] =  fetchQuizs(1);
-  //  [
-  //   {
-  //     id: 1,
-  //     front: "What is the capital of France?",
-  //     back: "Paris",
-  //     progress: 0.5,
-  //     sentence_from: "Geography textbook",
-  //     due: 0, // due in 1 min
-  //   },
-  //   {
-  //     id: 2,
-  //     front: "Who wrote 'Hamlet'?",
-  //     back: "William Shakespeare",
-  //     progress: 0.8,
-  //     sentence_from: "English Literature notes",
-  //     due: 0, // due in 30 sec
-  //   },
-  //   {
-  //     id: 3,
-  //     front: "What is the chemical symbol for water?",
-  //     back: "H₂O",
-  //     progress: 0.2,
-  //     sentence_from: "Chemistry handout",
-  //     due: 0, // due in 2 min
-  //   },
-  //   {
-  //     id: 4,
-  //     front: "Solve for x: 2x + 3 = 7",
-  //     back: "x = 2",
-  //     progress: 0.1,
-  //     sentence_from: "Algebra workbook",
-  //     due: 0, // due in 45 sec
-  //   },
-  //   {
-  //     id: 5,
-  //     front: "Translate 'ありがとう' to English",
-  //     back: "Thank you",
-  //     progress: 0.6,
-  //     sentence_from: "Japanese flashcards",
-  //     due: 0, // due in 1.5 min
-  //   },
-  // ];
-  // ====================== Sample =======================
-
   const queue = new MinHeap();
   let retired: Quiz[] = $state([]);
-
-  // for (const quiz of sampleQuizzes) {
-  //   queue.push(quiz);
-  // }
 
   let flipped = $state(false);
   let tried = $state(false);
@@ -296,7 +250,7 @@
     <div class="buttons">
       {#each ButtonType.values() as buttonType (buttonType.label)}
         <button
-          class={buttonType.toString().toLowerCase()}
+          class={buttonType.toClassName()}
           onclick={() => {
             update(buttonType);
           }}
@@ -312,21 +266,36 @@
 
 <button class="go-back" onclick={() => goto('/quizzes/')}>Go Back</button>
 
-<style>
+<style lang="scss">
   .cardEventBox {
     width: 500px;
   }
+
   .wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
   }
+
   .buttons {
     display: flex;
     justify-content: center;
     gap: 12px;
     margin-top: 20px;
+
+    button {
+      &:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+
+      /* Active Click Effect */
+      &:active {
+        transform: scale(0.95);
+      }
+    }
   }
+
   button {
     padding: 10px 20px;
     width: 150px;
@@ -338,6 +307,7 @@
       background 0.2s,
       transform 0.1s;
   }
+
   /* Button Colors */
   .again {
     background-color: #f44336; /* red */
@@ -353,15 +323,6 @@
     background-color: #2196f3; /* blue */
     color: white;
   }
-  .buttons button:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
-  }
-
-  /* Active Click Effect */
-  .buttons button:active {
-    transform: scale(0.95);
-  }
 
   .go-back {
     margin: 24px auto 0 auto;
@@ -374,8 +335,9 @@
     font-size: 1rem;
     cursor: pointer;
     transition: background 0.2s;
-  }
-  .go-back:hover {
-    background: #cbd5e1;
+
+    &:hover {
+      background: #cbd5e1;
+    }
   }
 </style>
