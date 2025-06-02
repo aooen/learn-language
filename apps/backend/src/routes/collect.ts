@@ -52,13 +52,16 @@ const app = new Hono<Env>().post(
 
         const wordList = line.split(/\W+/).filter(Boolean);
         for (const w of wordList) {
-          const lower = w.toLowerCase().trim();
+          const cleaned = w
+            .replace(/[^a-zA-Z]/g, '')
+            .toLowerCase()
+            .trim();
           // 유효하지 않은 단어 스킵
-          if (!/^[a-zA-Z]{2,}$/.test(lower)) {
+          if (cleaned.length < 2) {
             continue;
           }
 
-          const stem = stemmer.stem(lower);
+          const stem = stemmer.stem(cleaned);
           stemCount[stem] = (stemCount[stem] || 0) + 1;
         }
       }
