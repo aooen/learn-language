@@ -1,10 +1,9 @@
 import { fetch } from 'undici';
 import * as cheerio from 'cheerio';
-import { JSDOM } from 'jsdom';
 import pLimit from 'p-limit';
 
 // 단어 하나에 대해 Daum 사전에서 뜻을 크롤링
-export async function crawlMeaning(word: string): Promise<string | null> {
+export async function crawlMeaning1(word: string): Promise<string | null> {
   try {
     const res = await fetch(`https://dic.daum.net/search.do?q=${encodeURIComponent(word)}`, {
       headers: {
@@ -28,12 +27,12 @@ export async function crawlMeaning(word: string): Promise<string | null> {
     // 3개까지만 잘라서 join
     return results.length > 0 ? results.slice(0, 3).join(', ') : null;
   } catch (err) {
-    console.error(`[크롤링 실패: ${word}]`);
+    console.error(`[1차 크롤링 실패: ${word}]`);
     return null;
   }
 }
 
-async function crawlMeaningJSDOM(word: string): Promise<string | null> {
+async function crawlMeaning2(word: string): Promise<string | null> {
   try {
     const res = await fetch(`https://dic.daum.net/search.do?q=${encodeURIComponent(word)}`, {
       headers: {
@@ -45,17 +44,16 @@ async function crawlMeaningJSDOM(word: string): Promise<string | null> {
     if (!res.ok) throw new Error(`HTTP 오류: ${res.status}`);
 
     const html = await res.text();
-    const dom = new JSDOM(html);
-    const doc = dom.window.document;
+    const $ = cheerio.load(html);
 
-    const elements = Array.from(doc.querySelectorAll('.list_search .txt_search'));
-    const texts = elements
-      .map((el) => el.textContent?.trim())
-      .filter((text): text is string => !!text);
+    const results = $('.list_search .txt_search')
+      .map((_, el) => $(el).text().trim())
+      .get()
+      .filter(Boolean);
 
-    return texts.length > 0 ? texts.slice(0, 3).join(', ') : null;
+    return results.length > 0 ? results.slice(0, 3).join(', ') : null;
   } catch (err) {
-    console.error(`[2차(JSDOM) 크롤링 실패: ${word}]`);
+    console.error(`[2차 크롤링 실패: ${word}]`);
     return null;
   }
 }
@@ -66,7 +64,7 @@ export async function crawlMeanings(words: string[]): Promise<Record<string, str
 
   const tasks = words.map((word) =>
     limit(async () => {
-      const meaning = await crawlMeaning(word);
+      const meaning = await crawlMeaning1(word);
       result[word] = meaning;
       await new Promise((r) => setTimeout(r, 700));
     }),
@@ -78,10 +76,10 @@ export async function crawlMeanings(words: string[]): Promise<Record<string, str
     .map(([word]) => word);
 
   if (failedWords.length > 0) {
-    console.log(` 2차(JSDOM) 크롤링 시도: ${failedWords.length} 단어`);
+    console.log(` 2차 크롤링 시도: ${failedWords.length} 단어`);
 
     for (const word of failedWords) {
-      const meaning = await crawlMeaningJSDOM(word);
+      const meaning = await crawlMeaning2(word);
       result[word] = meaning;
       await new Promise((r) => setTimeout(r, 300));
     }
