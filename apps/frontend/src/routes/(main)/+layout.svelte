@@ -6,6 +6,7 @@
   import clsx from 'clsx';
   import ArchiveOutlineIcon from 'virtual:icons/ion/archive-outline';
   import FileTrayFullOutlineIcon from 'virtual:icons/ion/file-tray-full-outline';
+  import HelpCircleOutlineIcon from 'virtual:icons/ion/help-circle-outline';
   import { updateJwt } from '$lib/stores/auth.svelte';
 
   let { children } = $props();
@@ -27,6 +28,8 @@
         return 'home';
       case page.url.pathname.startsWith('/wordlist'):
         return 'wordlist';
+      case page.url.pathname.startsWith('/quizzes'):
+        return 'quizzes';
     }
     return null;
   });
@@ -42,6 +45,11 @@
     <a class={clsx('menu', { selected: menu === 'wordlist' })} href="/wordlist">
       <FileTrayFullOutlineIcon class="icon" />
       <span class="tooltiptext">단어장</span>
+    </a>
+
+    <a class={clsx('menu', { selected: menu === 'quizzes' })} href="/quizzes">
+      <HelpCircleOutlineIcon class="icon" />
+      <span class="tooltiptext">퀴즈</span>
     </a>
   </nav>
 

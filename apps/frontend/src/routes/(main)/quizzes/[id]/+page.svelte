@@ -3,17 +3,19 @@
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import Card from './Card.svelte';
+  import { goto } from '$app/navigation';
 
   type Quiz = {
     id: number;
     front: string;
     back: string;
     progress: number;
-    sentence_from: string;
+    sentenceFrom: string;
     due: number; // timestamp
+    quizSetId: number;
   };
 
-  const wordlistId = $derived(page.params['id']);
+  const quizSetId = $derived(page.params['id']);
 
   class MinHeap {
     heap: Quiz[] = $state([]);
@@ -111,6 +113,10 @@
       return this.label;
     }
 
+    toClassName(): string {
+      return this.toString().toLowerCase();
+    }
+
     static values(): ButtonType[] {
       return [ButtonType.Again, ButtonType.Hard, ButtonType.Good, ButtonType.Easy];
     }
@@ -142,8 +148,9 @@
         front: x.front,
         back: x.back,
         progress: x.progress,
-        sentence_from: x.sentence_from,
+        sentenceFrom: x.sentenceFrom,
         due: x.due,
+        quizSetId: x.quizSetId,
       };
       return newQuiz;
     });
@@ -151,58 +158,8 @@
     return typedQuizs;
   }
 
-  // ============================ Sample ======================
-  //  const sampleQuizzes: Quiz[] =  fetchQuizs(1);
-  //  [
-  //   {
-  //     id: 1,
-  //     front: "What is the capital of France?",
-  //     back: "Paris",
-  //     progress: 0.5,
-  //     sentence_from: "Geography textbook",
-  //     due: 0, // due in 1 min
-  //   },
-  //   {
-  //     id: 2,
-  //     front: "Who wrote 'Hamlet'?",
-  //     back: "William Shakespeare",
-  //     progress: 0.8,
-  //     sentence_from: "English Literature notes",
-  //     due: 0, // due in 30 sec
-  //   },
-  //   {
-  //     id: 3,
-  //     front: "What is the chemical symbol for water?",
-  //     back: "H₂O",
-  //     progress: 0.2,
-  //     sentence_from: "Chemistry handout",
-  //     due: 0, // due in 2 min
-  //   },
-  //   {
-  //     id: 4,
-  //     front: "Solve for x: 2x + 3 = 7",
-  //     back: "x = 2",
-  //     progress: 0.1,
-  //     sentence_from: "Algebra workbook",
-  //     due: 0, // due in 45 sec
-  //   },
-  //   {
-  //     id: 5,
-  //     front: "Translate 'ありがとう' to English",
-  //     back: "Thank you",
-  //     progress: 0.6,
-  //     sentence_from: "Japanese flashcards",
-  //     due: 0, // due in 1.5 min
-  //   },
-  // ];
-  // ====================== Sample =======================
-
   const queue = new MinHeap();
   let retired: Quiz[] = $state([]);
-
-  // for (const quiz of sampleQuizzes) {
-  //   queue.push(quiz);
-  // }
 
   let flipped = $state(false);
   let tried = $state(false);
@@ -224,6 +181,9 @@
         return;
       } else {
         target_quiz.progress += buttonType.progress;
+        if (target_quiz.progress > 100) {
+          target_quiz.progress = 100;
+        }
       }
       target_quiz.due = buttonType.later;
 
@@ -234,7 +194,7 @@
     }
     client.quizSet[':id'].$put({
       param: {
-        id: wordlistId,
+        id: quizSetId,
       },
       json: [...retired, ...queue.heap],
     });
@@ -244,9 +204,20 @@
   }
 
   onMount(async () => {
-    let typedQuizs = await fetchQuizs(wordlistId);
+    let typedQuizs = await fetchQuizs(quizSetId);
+    if (typedQuizs.length === 0) {
+      done = true;
+      return;
+    }
     for (const quiz of typedQuizs) {
+      if (quiz.progress >= 100) {
+        retired.push(quiz);
+        continue;
+      }
       queue.push(quiz);
+    }
+    if (queue.size() === 0) {
+      done = true;
     }
   });
 </script>
@@ -264,9 +235,14 @@
       }}
     >
       {#if queue.heap.length != 0}
-        <Card front={queue.heap[0].front} back={queue.heap[0].back} {flipped}></Card>
+        <Card
+          front={queue.heap[0].front}
+          back={queue.heap[0].back}
+          {flipped}
+          progress={queue.heap[0].progress}
+        ></Card>
       {:else}
-        <Card front="Loading" back="Loading" {flipped}></Card>
+        <Card front="Loading" back="Loading" {flipped} progress={0}></Card>
       {/if}
     </div>
   </div>
@@ -274,7 +250,7 @@
     <div class="buttons">
       {#each ButtonType.values() as buttonType (buttonType.label)}
         <button
-          class={buttonType.toString().toLowerCase()}
+          class={buttonType.toClassName()}
           onclick={() => {
             update(buttonType);
           }}
@@ -285,24 +261,41 @@
     </div>
   {/if}
 {:else}
-  <Card front="All Done!" back="We are updating your progress." {flipped}></Card>
+  <Card front="All Done!" back="We are updating your progress." {flipped} progress={0}></Card>
 {/if}
 
-<style>
+<button class="go-back" onclick={() => goto('/quizzes/')}>Go Back</button>
+
+<style lang="scss">
   .cardEventBox {
     width: 500px;
   }
+
   .wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
   }
+
   .buttons {
     display: flex;
     justify-content: center;
     gap: 12px;
     margin-top: 20px;
+
+    button {
+      &:hover {
+        opacity: 0.9;
+        transform: scale(1.05);
+      }
+
+      /* Active Click Effect */
+      &:active {
+        transform: scale(0.95);
+      }
+    }
   }
+
   button {
     padding: 10px 20px;
     width: 150px;
@@ -314,6 +307,7 @@
       background 0.2s,
       transform 0.1s;
   }
+
   /* Button Colors */
   .again {
     background-color: #f44336; /* red */
@@ -329,13 +323,21 @@
     background-color: #2196f3; /* blue */
     color: white;
   }
-  .buttons button:hover {
-    opacity: 0.9;
-    transform: scale(1.05);
-  }
 
-  /* Active Click Effect */
-  .buttons button:active {
-    transform: scale(0.95);
+  .go-back {
+    margin: 24px auto 0 auto;
+    display: block;
+    padding: 8px 24px;
+    background: #e5e7eb;
+    color: #222;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #cbd5e1;
+    }
   }
 </style>

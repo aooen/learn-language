@@ -84,6 +84,20 @@
     showInput = false;
     errorMsg = '';
   }
+  async function instatantiateQuizSet(id: number) {
+    const res = await client.quizSet.$post({ json: { wordlistId: Number(id) } });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        alert('퀴즈 세트가 생성되었습니다.');
+      } else {
+        alert('퀴즈 세트 생성에 실패했습니다.');
+      }
+    } else {
+      alert('서버 오류로 퀴즈 세트 생성에 실패했습니다.');
+    }
+  }
 
   onMount(() => {
     fetchWordlists();
@@ -97,10 +111,13 @@
   <ul>
     {#each wordlists as entry (entry.id)}
       <li>
-        <a class="entry" href={`/wordlist/${entry.id}`}>
-          {entry.title}
-        </a>
-        <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
+        <div class="entry-row">
+          <a class="entry" href={`/wordlist/${entry.id}`}>
+            {entry.title}
+          </a>
+          <button class="quizset" onclick={() => instatantiateQuizSet(entry.id)}>QuizIt</button>
+          <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
+        </div>
       </li>
     {/each}
   </ul>
@@ -139,7 +156,7 @@
   </div>
 {/if}
 
-<style>
+<style lang="scss">
   .container {
     max-width: 500px;
     margin: 0 auto;
@@ -160,29 +177,55 @@
     padding: 12px 16px;
     background: #f0f0f0;
     border-radius: 10px;
-    position: relative;
     overflow: hidden;
   }
 
-  .entry {
+  .entry-row {
     display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .entry {
     flex: 1;
     word-break: break-word;
-    align-items: center;
     color: black;
     text-decoration: none;
   }
 
+  .quizset,
   .delete {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
+    min-width: 17px;
+    width: 30px; /* adjust as needed for text */
+    padding: 4px 6px;
+    font-size: 0.92rem;
+    text-align: center;
+  }
+
+  .quizset {
+    min-width: 30px;
+    width: 60px;
+    padding: 4px 6px;
+    font-size: 0.92rem;
+    text-align: center;
+    margin-right: 4px;
+  }
+
+  .delete {
+    width: 4px;
+    min-width: 4px;
+    padding: 2px 0;
+    font-size: 1rem;
     background: none;
-    border: none;
     color: #ef4444;
-    font-size: 1.2rem;
+    border: none;
     cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+
+    &:hover {
+      background: #fee2e2;
+    }
   }
 
   .add-button {
@@ -249,7 +292,6 @@
   }
 
   button {
-    flex: 1;
     padding: 10px 0;
     border: none;
     border-radius: 6px;
