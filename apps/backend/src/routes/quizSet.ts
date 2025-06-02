@@ -77,9 +77,6 @@ const app = new Hono<Env>()
 
         const words = await db.select().from(wordTable).where(eq(wordTable.wordlistId, wordlistId));
 
-        // console.log('words', words);
-        // const inputQuizSet;
-
         if (quizSetId !== undefined) {
           const inputQuizSet = words.map((word) => ({
             front: word.word, // or word.word, adjust as needed
