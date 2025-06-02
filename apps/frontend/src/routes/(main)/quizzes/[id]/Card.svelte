@@ -1,6 +1,5 @@
 <script lang="ts">
-
-  let { front, back, flipped, progress} = $props();
+  let { front, back, flipped, progress } = $props();
 </script>
 
 <div class="cardContainer">
@@ -13,14 +12,10 @@
       {front}
     </div>
   {/if}
-    <div class="progress">
-      <div
-        class="progress-bar"
-        style="width: {progress}%;"
-      ></div>
-      <span class="progress-text">Progress: {progress}%</span>
-    </div>
-
+  <div class="progress">
+    <div class="progress-bar" style="width: {progress}%;"></div>
+    <span class="progress-text">Progress: {progress}%</span>
+  </div>
 </div>
 
 <style>
@@ -55,7 +50,7 @@
     height: 32px;
     background: #f3f4f6;
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     position: relative;
     overflow: hidden;
     margin-top: 8px;
@@ -65,7 +60,9 @@
   }
   .progress-bar {
     position: absolute;
-    left: 0; top: 0; bottom: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
     background: linear-gradient(90deg, #60a5fa 0%, #2563eb 100%);
     opacity: 0.15;
     z-index: 0;
