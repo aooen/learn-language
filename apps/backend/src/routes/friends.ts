@@ -8,17 +8,6 @@ import { zValidator } from '~/utils/validator-wrapper';
 import { eq, and } from 'drizzle-orm';
 import type { Env } from '../types/hono.ts';
 
-async function getUserIdFromToken(c: any): Promise<number | null> {
-  const token = c.req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) return null;
-  try {
-    const payload = await verify(token, process.env.JWT_SECRET!);
-    return Number(payload.sub);
-  } catch {
-    return null;
-  }
-}
-
 const app = new Hono<Env>()
   // 친구 목록 조회 (전체 목록)
   .get('/', async (c) => {
@@ -62,7 +51,7 @@ const app = new Hono<Env>()
 
   // 친구 삭제
   .delete('/:friendId', async (c) => {
-    const userId = await getUserIdFromToken(c);
+    const userId = c.get('userId');
     if (!userId) return c.json({ success: false, message: 'Unauthorized' }, 401);
 
     const friendId = Number(c.req.param('friendId'));

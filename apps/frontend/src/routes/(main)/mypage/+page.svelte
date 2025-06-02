@@ -30,8 +30,7 @@
       } else {
         error = '사용자 정보를 불러오는 데 실패했습니다';
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       error = '서버와 통신 중 오류가 발생했습니다';
     }
   });
@@ -73,8 +72,7 @@
         const text = await res.text();
         showError(text || '비밀번호 변경에 실패했습니다');
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       error = '서버와 통신 중 오류가 발생했습니다';
     }
   }
@@ -127,8 +125,7 @@
       } else {
         error = await res2.text();
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       error = '이미지 업로드 중 오류가 발생했습니다';
     }
   }

@@ -9,9 +9,4 @@ export default defineConfig({
       compiler: 'svelte',
     }),
   ],
-  server: {
-    proxy: {
-      '/uploads': 'http://localhost:3000',
-    },
-  },
 });
