@@ -52,9 +52,9 @@
 
 {#if words.length > 0}
   <div class="button-group">
-    <button class="delete-btn" on:click={deleteSelectedWords}>선택 삭제</button>
+    <button class="delete-btn" onclick={deleteSelectedWords}>선택 삭제</button>
     {#if wordlist?.sourceType === SiteType.Youtube}
-      <button class="media-btn" on:click={() => goto(`/wordlist/${wordlistId}/media`)}>
+      <button class="media-btn" onclick={() => goto(`/wordlist/${wordlistId}/media`)}>
         🎥 영상과 함께 보기
       </button>
     {/if}
@@ -94,7 +94,7 @@
   <p class="empty-text">불러올 수 있는 단어가 없습니다.</p>
 {/if}
 
-<style>
+<style lang="scss">
   .title {
     text-align: center;
     font-size: 1.5rem;
@@ -121,9 +121,10 @@
     padding: 0.5rem 1rem;
     border-radius: 0.375rem;
     transition: background-color 0.2s ease;
-  }
-  .delete-btn:hover {
-    background-color: #dc2626;
+
+    &:hover {
+      background-color: #dc2626;
+    }
   }
 
   .media-btn {
@@ -132,9 +133,10 @@
     padding: 0.5rem 1rem;
     border-radius: 0.375rem;
     transition: background-color 0.2s ease;
-  }
-  .media-btn:hover {
-    background-color: #2563eb;
+
+    &:hover {
+      background-color: #2563eb;
+    }
   }
 
   .table-wrapper {
@@ -149,23 +151,23 @@
     border: 1px solid #d1d5db;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     border-radius: 0.375rem;
-  }
 
-  .word-table th,
-  .word-table td {
-    padding: 0.5rem;
-    text-align: center;
-    font-size: 0.875rem;
-    border-top: 1px solid #e5e7eb;
-  }
+    th,
+    td {
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      border-top: 1px solid #e5e7eb;
+    }
 
-  .word-table thead {
-    background-color: #f3f4f6;
-    color: #374151;
-  }
+    thead {
+      background-color: #f3f4f6;
+      color: #374151;
+    }
 
-  .word-table tr:hover {
-    background-color: #f9fafb;
+    tr:hover {
+      background-color: #f9fafb;
+    }
   }
 
   .no-meaning {
