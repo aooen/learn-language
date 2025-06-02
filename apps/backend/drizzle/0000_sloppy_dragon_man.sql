@@ -59,4 +59,3 @@ ALTER TABLE `subtitle` ADD CONSTRAINT `subtitle_wordlistId_wordlist_id_fk` FOREI
 ALTER TABLE `quizSet` ADD CONSTRAINT `quizSet_wordlistId_wordlist_id_fk` FOREIGN KEY (`wordlistId`) REFERENCES `wordlist`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `wordlist` ADD CONSTRAINT `wordlist_userId_user_id_fk` FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `quiz` ADD CONSTRAINT `quiz_quizSetId_quizSet_id_fk` FOREIGN KEY (`quizSetId`) REFERENCES `quizSet`(`id`) ON DELETE cascade ON UPDATE no action;
-ALTER TABLE `word` MODIFY COLUMN `meaning` VARCHAR(255) NULL;
