@@ -16,7 +16,7 @@
   let error = $state<string | null>(null);
 
   let selectedFile = $state<File | null>(null);
-  let preview = $state<string | null>('');
+  let preview = $state<string>('');
   let fileInput = $state<HTMLInputElement | null>(null);
 
   onMount(async () => {
@@ -128,6 +128,13 @@
       error = '이미지 업로드 중 오류가 발생했습니다';
     }
   }
+
+  function getImageUrl(path: string): string {
+    if (path.startsWith('http') || path === '') {
+      return path;
+    }
+    return `${import.meta.env.VITE_API_URL}${path}`;
+  }
 </script>
 
 <div class="mypage-wrapper">
@@ -154,11 +161,7 @@
           }
         }}
       >
-        <img
-          src={preview || '/default-profile.png'}
-          alt="프로필 이미지"
-          class="profile-image hoverable"
-        />
+        <img src={getImageUrl(preview)} alt="프로필 이미지" class="profile-image hoverable" />
         <p class="hint">클릭하여 프로필 이미지 수정</p>
       </div>
       <input

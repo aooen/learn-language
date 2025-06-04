@@ -13,9 +13,10 @@
   let error = $state('');
   let newFriendUsername = $state('');
 
-  function getImageUrl(path: string | null | undefined): string {
-    if (!path) return '/default-profile.png';
-    if (path.startsWith('http')) return path;
+  function getImageUrl(path: string): string {
+    if (path.startsWith('http') || path === '') {
+      return path;
+    }
     return `${import.meta.env.VITE_API_URL}${path}`;
   }
 

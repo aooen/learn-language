@@ -1,11 +1,7 @@
 import { Hono } from 'hono';
-import { mkdirSync, writeFileSync } from 'fs';
-import { randomUUID } from 'crypto';
-import { extname } from 'path';
+import * as path from 'path';
 import type { Env } from '../types/hono.ts';
-
-const UPLOAD_DIR = 'uploads';
-mkdirSync(UPLOAD_DIR, { recursive: true });
+import { uploadFile } from '~/utils/upload.ts';
 
 const app = new Hono<Env>().post('/', async (c) => {
   const body = await c.req.parseBody();
@@ -15,11 +11,8 @@ const app = new Hono<Env>().post('/', async (c) => {
     return c.text('No file uploaded', 400);
   }
 
-  const extension = extname(file.name);
-  const filename = `${randomUUID()}${extension}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  writeFileSync(`${UPLOAD_DIR}/${filename}`, buffer);
+  const extension = path.extname(file.name);
+  const filename = await uploadFile(file, extension);
 
   return c.json({ url: `/uploads/${filename}` });
 });

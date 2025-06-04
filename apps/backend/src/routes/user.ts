@@ -3,11 +3,13 @@ import { sign } from 'hono/jwt';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import jdenticon from 'jdenticon';
 
 import { userTable } from '~/schemas/user';
 import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
+import { uploadFile } from '~/utils/upload';
 
 const app = new Hono<Env>()
   .post(
@@ -69,11 +71,15 @@ const app = new Hono<Env>()
         algorithm: 'bcrypt',
         cost: 4,
       });
+
+      await uploadFile(jdenticon.toPng(data.username, 200), '.png');
+
       await db.insert(userTable).values({
         username: data.username,
         password: bcryptHash,
         motherLang: data.motherLang,
         targetLang: data.targetLang,
+        image: '',
       });
       const [user] = await db.select().from(userTable).where(eq(userTable.username, data.username));
       if (!user) {

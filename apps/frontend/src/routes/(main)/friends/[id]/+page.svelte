@@ -11,9 +11,10 @@
   let error = $state('');
   let user = $state<User | null>(null);
 
-  function getImageUrl(path: string | null | undefined): string {
-    if (!path) return '/default-profile.png';
-    if (path.startsWith('http')) return path;
+  function getImageUrl(path: string): string {
+    if (path.startsWith('http') || path === '') {
+      return path;
+    }
     return `${import.meta.env.VITE_API_URL}${path}`;
   }
 

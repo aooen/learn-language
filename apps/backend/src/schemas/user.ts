@@ -6,5 +6,5 @@ export const userTable = mysqlTable('user', {
   password: binary({ length: 60 }).notNull(),
   motherLang: char({ length: 5 }).notNull(),
   targetLang: char({ length: 5 }).notNull(),
-  image: varchar({ length: 512 }),
+  image: varchar({ length: 512 }).notNull(),
 });
