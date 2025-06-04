@@ -5,8 +5,14 @@ import type { Env } from '~/types/hono';
 import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteType';
 import { HTTPException } from 'hono/http-exception';
 import { getYoutubeSubtitle } from '~/utils/ytdlp';
+import { db } from '~/utils/db';
+import { subtitleTable } from '~/schemas/subtitle'
+import { wordlistTable } from '~/schemas/wordlist';
+import { eq } from 'drizzle-orm';
 
-type Caption = { start: number; end: number; text: string };
+
+
+type Caption = { start: number; end: number; text: string; koText: string; };
 
 const parseWEBVTT = (input: string): Caption[] => {
   const captions: Caption[] = [];
@@ -31,6 +37,10 @@ const parseWEBVTT = (input: string): Caption[] => {
     ) {
       // 텍스트 처리
       currentCaption.text = currentCaption.text ? `${currentCaption.text}\n${line}` : line;
+
+      //임시 한글 자막 처리
+      currentCaption.koText = '[한글 자막 출력 부분]';
+
     } else if (!line) {
       // 빈 줄에서 캡션 완성
       if (
@@ -86,6 +96,15 @@ const app = new Hono<Env>().post(
   async (c) => {
     const locale = c.get('locale');
     const data = c.req.valid('json');
+
+
+
+    //db에서 자막을 가져올 경우
+    // let enSubtitle = await db.select({start: subtitleTable.startTime, end: subtitleTable.endTime, text: subtitleTable.subtitle, koText: subtitleTable.koSubtitle})
+    // .from(subtitleTable)
+    // .innerJoin(wordlistTable, eq(subtitleTable.wordlistId,wordlistTable.id))
+    // .where(eq(wordlistTable.sourceUrl,data.fullUrl));
+    // return c.json(enSubtitle);
 
     if (determineSiteType(data.fullUrl) === SiteType.Youtube) {
       try {

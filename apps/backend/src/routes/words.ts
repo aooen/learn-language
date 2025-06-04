@@ -5,6 +5,7 @@ import { wordTable } from '~/schemas/word';
 import { db } from '~/utils/db';
 import { eq, inArray } from 'drizzle-orm';
 import type { Env } from '~/types/hono';
+import natural from 'natural';
 
 const app = new Hono<Env>()
   .get('/:wordlistId', async (c) => {
@@ -25,6 +26,36 @@ const app = new Hono<Env>()
       await db.delete(wordTable).where(inArray(wordTable.id, ids));
       return c.json({ ok: true });
     },
+  )
+  .post(
+    '/find',
+    zValidator(
+      'json',
+      z.object({
+        word: z.string(),
+      }),
+    ),
+    async (c) => {
+      const data = c.req.valid('json');
+      const stemmer = natural.PorterStemmer;
+      const processedWord = stemmer.stem(data.word.toLowerCase());
+
+      const result = await db
+        .select({
+          koWord: wordTable.meaning,
+          enWord: wordTable.word
+        })
+        .from(wordTable)
+        .where(eq(wordTable.word, processedWord));
+
+      const modifiedResult = result.map(item => ({
+        ...item,
+        enWord: data.word
+      }));
+
+      return c.json(modifiedResult);
+    }
   );
 
 export default app;
+

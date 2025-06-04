@@ -9,4 +9,5 @@ export const subtitleTable = mysqlTable('subtitle', {
   startTime: int().notNull(),
   endTime: int().notNull(),
   subtitle: varchar({ length: 1024 }).notNull(),
+  koSubtitle: varchar({ length: 1024 }).notNull(), //한글 뜻을 출력할 부분
 });
