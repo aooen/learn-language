@@ -8,27 +8,6 @@
       "when": 1747637104538,
       "tag": "0000_sloppy_dragon_man",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1748179385133,
-      "tag": "0001_perfect_thunderbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1748179951807,
-      "tag": "0002_overjoyed_wallflower",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1748604760191,
-      "tag": "0003_free_shadow_king",
-      "breakpoints": true
     }
   ]
 }

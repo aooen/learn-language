@@ -1,1 +1,0 @@
-ALTER TABLE `friends` ADD PRIMARY KEY(`userId`,`friendId`);
