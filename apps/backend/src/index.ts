@@ -8,8 +8,10 @@ import wordlist from './routes/wordlist';
 import words from './routes/words';
 import mediaInfo from './routes/mediaInfo';
 import quizSet from './routes/quizSet';
+import uploads from './routes/uploads';
+import friends from './routes/friends';
 import type { Env } from './types/hono';
-
+import { serveStatic } from 'hono/bun';
 import './startup';
 
 const app = new Hono<Env>()
@@ -17,15 +19,25 @@ const app = new Hono<Env>()
   .use('*', async (c, next) => {
     // Skip JWT validation for user routes
     const path = c.req.path;
-    if (path === '/user/login' || path === '/user/signup') {
-      return await next();
-    }
 
+    switch (true) {
+      case path.startsWith('/uploads'):
+      case path === '/user/login':
+      case path === '/user/signup':
+        return await next();
+    }
     // Apply JWT middleware for other routes
     return jwt({
       secret: process.env.JWT_SECRET!,
     })(c, next);
   })
+  .use(
+    '/uploads/*',
+    serveStatic({
+      root: './uploads',
+      rewriteRequestPath: (path) => path.replace(/^\/uploads/, ''),
+    }),
+  )
   .use(async (c, next) => {
     // Only set userId and locale if JWT was processed
     if (c.get('jwtPayload')) {
@@ -41,7 +53,9 @@ const routes = app
   .route('/wordlist', wordlist)
   .route('/words', words)
   .route('/mediaInfo', mediaInfo)
-  .route('/quizSet', quizSet);
+  .route('/quizSet', quizSet)
+  .route('/uploads', uploads)
+  .route('/friends', friends);
 
 export type AppType = typeof routes;
 

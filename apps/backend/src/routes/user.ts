@@ -112,6 +112,54 @@ const app = new Hono<Env>()
         process.env.JWT_SECRET!,
       ),
     });
+  })
+
+  // 비밀번호 변경(mypage)
+  .put(
+    '/me/password',
+    zValidator(
+      'json',
+      z.object({
+        currentPassword: z.string(),
+        newPassword: z.string().min(8),
+      }),
+    ),
+    async (c) => {
+      const userId = c.get('userId');
+      const { currentPassword, newPassword } = c.req.valid('json');
+
+      const [user] = await db
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, Number(userId)));
+
+      if (!user) return c.text('User not found', 404);
+
+      const isMatch = await Bun.password.verify(currentPassword, user.password);
+      if (!isMatch) return c.text('현재 비밀번호가 일치하지 않습니다', 403);
+
+      const hashed = await Bun.password.hash(newPassword, {
+        algorithm: 'bcrypt',
+        cost: 4,
+      });
+
+      await db
+        .update(userTable)
+        .set({ password: hashed })
+        .where(eq(userTable.id, Number(userId)));
+
+      return c.text('비밀번호가 성공적으로 변경되었습니다');
+    },
+  )
+
+  .put('/me/image', zValidator('json', z.object({ imageUrl: z.string().url() })), async (c) => {
+    const userId = c.get('userId');
+    const { imageUrl } = c.req.valid('json');
+    await db
+      .update(userTable)
+      .set({ image: imageUrl })
+      .where(eq(userTable.id, Number(userId)));
+    return c.json({ success: true });
   });
 
 export default app;

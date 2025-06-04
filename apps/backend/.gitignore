@@ -1,6 +1,7 @@
 # deps
 node_modules/
 vendors/
+uploads/
 
 # Env
 !.env
