@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import clsx from 'clsx';
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import { SiteType } from '@learn-language/shared/utils/siteType';
@@ -263,7 +264,10 @@
         {#each allSubtitle as subtitle, i (subtitle.timeLine)}
           <div
             id={'subtitle-' + i}
-            class="subtitle-item {i === activeSubIndex ? 'current' : 'previous'}"
+            class={clsx('subtitle-item', {
+              current: i === activeSubIndex,
+              previous: i !== activeSubIndex,
+            })}
           >
             <div class="timeline">{subtitle.timeLine}</div>
             <div class="text">
