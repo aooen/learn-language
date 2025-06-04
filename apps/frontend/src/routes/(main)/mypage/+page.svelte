@@ -141,10 +141,19 @@
   {/if}
 
   {#if user}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="card profile-card">
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="image-wrapper" onclick={() => fileInput?.click()}>
+      <div
+        class="image-wrapper"
+        tabindex="0"
+        role="button"
+        aria-label="프로필 이미지 업로드"
+        onclick={() => fileInput?.click()}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') {
+            fileInput?.click();
+          }
+        }}
+      >
         <img
           src={preview || '/default-profile.png'}
           alt="프로필 이미지"

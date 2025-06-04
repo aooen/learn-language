@@ -81,11 +81,20 @@
   {/if}
 
   <div class="friend-list">
-    {#each friends as friend (friend.id)}
+    {#each friends as friend, index (friend.id)}
       <div class="friend-card">
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="left" onclick={() => viewFriend(friend.id)}>
+        <div
+          class="left"
+          tabindex={index}
+          role="button"
+          aria-label={`${friend.username} 정보 보기`}
+          onclick={() => viewFriend(friend.id)}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              viewFriend(friend.id);
+            }
+          }}
+        >
           <img class="avatar" src={getImageUrl(friend.image)} alt="프로필 이미지" />
           <span>{friend.username}</span>
         </div>
