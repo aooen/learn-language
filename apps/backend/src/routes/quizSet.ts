@@ -78,14 +78,16 @@ const app = new Hono<Env>()
         const words = await db.select().from(wordTable).where(eq(wordTable.wordlistId, wordlistId));
 
         if (quizSetId !== undefined) {
-          const inputQuizSet = words.map((word) => ({
-            front: word.word, // or word.word, adjust as needed
-            back: word.meaning, // or word.meaning, adjust as needed
-            progress: 0,
-            sentenceFrom: '',
-            due: 0,
-            quizSetId: quizSetId,
-          }));
+          const inputQuizSet = words
+            .filter((word) => word.meaning)
+            .map((word) => ({
+              front: word.word, // or word.word, adjust as needed
+              back: word.meaning!, // or word.meaning, adjust as needed
+              progress: 0,
+              sentenceFrom: '',
+              due: 0,
+              quizSetId: quizSetId,
+            }));
           if (words.length > 0) {
             await db.insert(quizTable).values(inputQuizSet);
           }
