@@ -8,7 +8,7 @@ import wordlist from './routes/wordlist';
 import words from './routes/words';
 import mediaInfo from './routes/mediaInfo';
 import quizSet from './routes/quizSet';
-import upload from './routes/upload';
+import uploads from './routes/uploads';
 import friends from './routes/friends';
 import type { Env } from './types/hono';
 import { serveStatic } from 'hono/bun';
@@ -54,7 +54,7 @@ const routes = app
   .route('/words', words)
   .route('/mediaInfo', mediaInfo)
   .route('/quizSet', quizSet)
-  .route('/uploads', upload)
+  .route('/uploads', uploads)
   .route('/friends', friends);
 
 export type AppType = typeof routes;
