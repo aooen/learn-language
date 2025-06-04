@@ -8,6 +8,13 @@
       "when": 1747637104538,
       "tag": "0000_sloppy_dragon_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1749024798454,
+      "tag": "0001_first_harrier",
+      "breakpoints": true
     }
   ]
 }
