@@ -57,7 +57,7 @@
   async function removeFriend(id: number) {
     error = '';
     try {
-      const res = await client.friends[id].$delete({ param: { friendId: String(id) } });
+      const res = await client.friends[':friendId'].$delete({ param: { friendId: String(id) } });
       if (res.ok) {
         friends = friends.filter((f) => f.id !== id);
       } else {

@@ -2,13 +2,12 @@
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
 
-  let user = $state({
-    id: '',
-    username: '',
-    image: '',
-    motherLang: '',
-    targetLang: '',
-  });
+  type User = Omit<
+    Awaited<ReturnType<Awaited<ReturnType<(typeof client.user.me)['$get']>>['json']>>['user'],
+    'password'
+  >;
+
+  let user = $state<User | null>(null);
 
   let currentPw = $state('');
   let newPw = $state('');
@@ -17,7 +16,7 @@
   let error = $state<string | null>(null);
 
   let selectedFile = $state<File | null>(null);
-  let preview = $state('');
+  let preview = $state<string | null>('');
   let fileInput = $state<HTMLInputElement | null>(null);
 
   onMount(async () => {
@@ -118,7 +117,7 @@
         json: { imageUrl: absUrl },
       });
 
-      if (res2.ok) {
+      if (res2.ok && user) {
         user.image = absUrl;
         preview = absUrl;
         selectedFile = null;
@@ -141,61 +140,63 @@
     <div class="toast success">{msg}</div>
   {/if}
 
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="card profile-card">
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="image-wrapper" onclick={() => fileInput?.click()}>
-      <img
-        src={preview || '/default-profile.png'}
-        alt="프로필 이미지"
-        class="profile-image hoverable"
+  {#if user}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="card profile-card">
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div class="image-wrapper" onclick={() => fileInput?.click()}>
+        <img
+          src={preview || '/default-profile.png'}
+          alt="프로필 이미지"
+          class="profile-image hoverable"
+        />
+        <p class="hint">클릭하여 프로필 이미지 수정</p>
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        bind:this={fileInput}
+        style="display: none"
+        onchange={handleFileChange}
       />
-      <p class="hint">클릭하여 프로필 이미지 수정</p>
-    </div>
-    <input
-      type="file"
-      accept="image/*"
-      bind:this={fileInput}
-      style="display: none"
-      onchange={handleFileChange}
-    />
 
-    <div class="info-grid">
-      <div><strong>아이디</strong><br />{user.username}</div>
-      <div><strong>모국어</strong><br />{user.motherLang}</div>
-      <div><strong>목표 언어</strong><br />{user.targetLang}</div>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-item">
-        <h4>총 학습 단어</h4>
-        <p>--</p>
+      <div class="info-grid">
+        <div><strong>아이디</strong><br />{user.username}</div>
+        <div><strong>모국어</strong><br />{user.motherLang}</div>
+        <div><strong>목표 언어</strong><br />{user.targetLang}</div>
       </div>
-      <div class="stat-item">
-        <h4>레벨</h4>
-        <p>--</p>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <h4>총 학습 단어</h4>
+          <p>--</p>
+        </div>
+        <div class="stat-item">
+          <h4>레벨</h4>
+          <p>--</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <h3>비밀번호 변경</h3>
-    <form onsubmit={changePassword}>
-      <label>
-        현재 비밀번호
-        <input type="password" bind:value={currentPw} required />
-      </label>
-      <label>
-        새 비밀번호 (최소 8자)
-        <input type="password" bind:value={newPw} minlength="8" required />
-      </label>
-      <label>
-        새 비밀번호 확인
-        <input type="password" bind:value={confirmPw} minlength="8" required />
-      </label>
-      <button type="submit">변경하기</button>
-    </form>
-  </div>
+    <div class="card">
+      <h3>비밀번호 변경</h3>
+      <form onsubmit={changePassword}>
+        <label>
+          현재 비밀번호
+          <input type="password" bind:value={currentPw} required />
+        </label>
+        <label>
+          새 비밀번호 (최소 8자)
+          <input type="password" bind:value={newPw} minlength="8" required />
+        </label>
+        <label>
+          새 비밀번호 확인
+          <input type="password" bind:value={confirmPw} minlength="8" required />
+        </label>
+        <button type="submit">변경하기</button>
+      </form>
+    </div>
+  {/if}
 </div>
 
 <style lang="scss">

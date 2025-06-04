@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { client } from '$lib/utils/api';
-  import { get } from 'svelte/store';
+
+  type User = Omit<
+    Awaited<ReturnType<Awaited<ReturnType<(typeof client.user.me)['$get']>>['json']>>['user'],
+    'password'
+  >;
 
   let error = $state('');
-  let user = $state({
-    id: 0,
-    username: '',
-    image: '',
-    motherLang: '',
-    targetLang: '',
-  });
+  let user = $state<User | null>(null);
 
   function getImageUrl(path: string | null | undefined): string {
     if (!path) return '/default-profile.png';
@@ -20,9 +18,9 @@
   }
 
   onMount(async () => {
-    const id = get(page).params.id;
+    const id = page.params.id;
     try {
-      const res = await client.friends[id].$get();
+      const res = await client.friends[':friendId'].$get({ param: { friendId: id } });
       if (res.ok) {
         const data = await res.json();
         user = data.user;
@@ -40,7 +38,7 @@
 
   {#if error}
     <p class="error">{error}</p>
-  {:else}
+  {:else if user}
     <section class="profile">
       <div class="image-wrapper">
         <img class="profile-image" src={getImageUrl(user.image)} alt="프로필 이미지" />
