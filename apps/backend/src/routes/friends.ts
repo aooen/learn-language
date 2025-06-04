@@ -41,6 +41,8 @@ const app = new Hono<Env>()
       friendId: friend.id,
     });
 
+    // TODO: 친구 추가 수락 기능 추가
+
     return c.json({ success: affectedRows > 0 });
   })
 
@@ -58,6 +60,8 @@ const app = new Hono<Env>()
   // 친구 상세 정보 조회 (비밀번호 제외)
   .get('/:friendId', async (c) => {
     const friendId = Number(c.req.param('friendId'));
+
+    // TODO: 친구 목록에 있는 사람인지 확인
 
     const [user] = await db
       .select({
