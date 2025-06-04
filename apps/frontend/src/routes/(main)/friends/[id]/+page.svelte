@@ -66,7 +66,7 @@
   {/if}
 </div>
 
-<style>
+<style lang="scss">
   .mypage-container {
     max-width: 480px;
     margin: 2rem auto;
@@ -118,17 +118,17 @@
     border-radius: 6px;
     text-align: center;
     background-color: #fafafa;
-  }
 
-  .stat-item h4 {
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
-    color: #555;
-  }
+    h4 {
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #555;
+    }
 
-  .stat-item p {
-    font-size: 1.25rem;
-    font-weight: bold;
+    p {
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
   }
 
   .error {

@@ -112,7 +112,7 @@
   </div>
 </div>
 
-<style>
+<style lang="scss">
   .container {
     max-width: 520px;
     margin: 2rem auto;
@@ -166,10 +166,10 @@
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
-  }
 
-  .delete-button:hover {
-    background: rgba(90, 120, 240, 0.1);
+    &:hover {
+      background: rgba(90, 120, 240, 0.1);
+    }
   }
 
   .add-form {
@@ -193,10 +193,10 @@
     color: white;
     font-size: 1rem;
     cursor: pointer;
-  }
 
-  .add-button:hover {
-    background: #3a5be0;
+    &:hover {
+      background: #3a5be0;
+    }
   }
 
   .error {

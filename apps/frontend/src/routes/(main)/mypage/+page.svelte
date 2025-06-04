@@ -198,7 +198,7 @@
   </div>
 </div>
 
-<style>
+<style lang="scss">
   .mypage-wrapper {
     max-width: 600px;
     margin: 2rem auto;
@@ -282,10 +282,10 @@
     color: #fff;
     font-weight: bold;
     cursor: pointer;
-  }
 
-  button:hover {
-    background-color: #005bb5;
+    &:hover {
+      background-color: #005bb5;
+    }
   }
 
   .toast {
@@ -297,13 +297,13 @@
     border-radius: 6px;
     color: white;
     z-index: 1000;
-  }
 
-  .toast.success {
-    background-color: #007e33;
-  }
+    &.success {
+      background-color: #007e33;
+    }
 
-  .toast.error {
-    background-color: #e00;
+    &.error {
+      background-color: #e00;
+    }
   }
 </style>
