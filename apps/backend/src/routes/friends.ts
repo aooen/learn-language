@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { verify } from 'hono/jwt';
 import { db } from '~/utils/db';
 import { friendsTable } from '~/schemas/friends';
 import { userTable } from '~/schemas/user';
