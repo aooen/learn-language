@@ -126,8 +126,6 @@ const app = new Hono<Env>()
     ),
     async (c) => {
       const userId = c.get('userId');
-      if (!userId) return c.text('Unauthorized', 401);
-
       const { currentPassword, newPassword } = c.req.valid('json');
 
       const [user] = await db
@@ -156,8 +154,6 @@ const app = new Hono<Env>()
 
   .put('/me/image', zValidator('json', z.object({ imageUrl: z.string().url() })), async (c) => {
     const userId = c.get('userId');
-    if (!userId) return c.text('Unauthorized', 401);
-
     const { imageUrl } = c.req.valid('json');
     await db
       .update(userTable)

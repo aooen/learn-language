@@ -12,8 +12,6 @@ const app = new Hono<Env>()
   // 친구 목록 조회 (전체 목록)
   .get('/', async (c) => {
     const userId = c.get('userId');
-    if (!userId) return c.text('Unauthorized', 401);
-
     const results = await db
       .select({ id: userTable.id, username: userTable.username, image: userTable.image })
       .from(friendsTable)
@@ -26,8 +24,6 @@ const app = new Hono<Env>()
   // 친구 추가
   .post('/', zValidator('json', z.object({ friendUsername: z.string() })), async (c) => {
     const userId = c.get('userId');
-    if (!userId) return c.json({ success: false, message: 'Unauthorized' }, 401);
-
     const { friendUsername: raw } = c.req.valid('json');
     const friendUsername = raw.trim();
 
@@ -52,8 +48,6 @@ const app = new Hono<Env>()
   // 친구 삭제
   .delete('/:friendId', async (c) => {
     const userId = c.get('userId');
-    if (!userId) return c.json({ success: false, message: 'Unauthorized' }, 401);
-
     const friendId = Number(c.req.param('friendId'));
     const [{ affectedRows }] = await db
       .delete(friendsTable)
