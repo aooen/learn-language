@@ -291,7 +291,7 @@
   </div>
 </div>
 
-<style>
+<style lang="scss">
   .videoWrapper {
     display: flex;
     justify-content: center;
@@ -368,19 +368,19 @@
     margin-bottom: 10px;
     padding: 10px 0;
     flex-shrink: 0;
-  }
 
-  .subtitle-item.current {
-    font-weight: bold;
-    font-size: 2rem;
-    color: #000;
-    opacity: 1;
-  }
+    &.current {
+      font-weight: bold;
+      font-size: 2rem;
+      color: #000;
+      opacity: 1;
+    }
 
-  .subtitle-item.previous {
-    opacity: 0.7;
-    font-size: 1.5rem;
-    color: #666;
+    &.previous {
+      opacity: 0.7;
+      font-size: 1.5rem;
+      color: #666;
+    }
   }
 
   .timeline {
@@ -401,12 +401,12 @@
     margin-right: 2px;
     transition: background 0.2s;
     display: inline-block;
-  }
 
-  .word-span:hover,
-  .word-span:focus {
-    background: #e0f7fa;
-    outline: none;
+    &:hover,
+    &:focus {
+      background: #e0f7fa;
+      outline: none;
+    }
   }
 
   .overlayOff {
