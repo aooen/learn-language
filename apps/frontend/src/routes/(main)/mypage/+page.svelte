@@ -111,15 +111,13 @@
       }
 
       const { url } = await res.json();
-      const absUrl = `${location.origin}${url}`;
-
       const res2 = await client.user.me.image.$put({
-        json: { imageUrl: absUrl },
+        json: { imageUrl: url },
       });
 
       if (res2.ok && user) {
-        user.image = absUrl;
-        preview = absUrl;
+        user.image = url;
+        preview = url;
         selectedFile = null;
       } else {
         error = await res2.text();

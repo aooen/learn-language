@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import * as path from 'path';
-import type { Env } from '../types/hono.ts';
-import { uploadFile } from '~/utils/upload.ts';
+import type { Env } from '~/types/hono';
+import { uploadFile } from '~/utils/upload';
 
 const app = new Hono<Env>().post('/', async (c) => {
   const body = await c.req.parseBody();

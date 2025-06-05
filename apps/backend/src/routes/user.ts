@@ -3,7 +3,7 @@ import { sign } from 'hono/jwt';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import jdenticon from 'jdenticon';
+import * as jdenticon from 'jdenticon';
 
 import { userTable } from '~/schemas/user';
 import { zValidator } from '~/utils/validator-wrapper';
@@ -72,14 +72,14 @@ const app = new Hono<Env>()
         cost: 4,
       });
 
-      await uploadFile(jdenticon.toPng(data.username, 200), '.png');
+      const filename = await uploadFile(jdenticon.toPng(data.username, 200), '.png');
 
       await db.insert(userTable).values({
         username: data.username,
         password: bcryptHash,
         motherLang: data.motherLang,
         targetLang: data.targetLang,
-        image: '',
+        image: `/uploads/${filename}`,
       });
       const [user] = await db.select().from(userTable).where(eq(userTable.username, data.username));
       if (!user) {
@@ -158,7 +158,7 @@ const app = new Hono<Env>()
     },
   )
 
-  .put('/me/image', zValidator('json', z.object({ imageUrl: z.string().url() })), async (c) => {
+  .put('/me/image', zValidator('json', z.object({ imageUrl: z.string() })), async (c) => {
     const userId = c.get('userId');
     const { imageUrl } = c.req.valid('json');
     await db
