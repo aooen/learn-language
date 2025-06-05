@@ -15,6 +15,13 @@
       "when": 1749024798454,
       "tag": "0001_first_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1749139431991,
+      "tag": "0002_lush_rattler",
+      "breakpoints": true
     }
   ]
 }

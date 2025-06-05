@@ -7,11 +7,12 @@ import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteTy
 
 import { zValidator } from '~/utils/validator-wrapper';
 import { getYoutubeSubtitle } from '~/utils/ytdlp';
+import { crawlMeanings } from '~/crawler/daum-dict';
 import type { Env } from '~/types/hono';
 import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
-import { crawlMeanings } from '~/crawler/daum-dict';
+import { getWordFrequencies } from '~/utils/corpus';
 
 const stemmer = natural.PorterStemmer;
 
@@ -70,13 +71,14 @@ const app = new Hono<Env>().post(
       const filteredWords = stemWords.filter((w) => /^[a-zA-Z]{2,}$/.test(w));
 
       const meaningMap = await crawlMeanings(filteredWords);
+      const frequencyMap = await getWordFrequencies(locale, filteredWords);
 
       await db.insert(wordTable).values(
         filteredWords.map((stem): typeof wordTable.$inferInsert => ({
           word: stem,
           meaning: meaningMap[stem],
           count: stemCount[stem] ?? 0,
-          frequency: 0,
+          frequency: frequencyMap[stem] ?? 0,
           wordlistId,
         })),
       );

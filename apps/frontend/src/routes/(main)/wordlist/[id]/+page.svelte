@@ -17,6 +17,9 @@
     ReturnType<Awaited<ReturnType<(typeof client.wordlist)[':id']['$get']>>['json']>
   > | null = $state(null);
 
+  let sortKey: 'count' | 'frequency' | null = $state(null);
+  let sortOrder: 'asc' | 'desc' = $state('asc');
+
   onMount(async () => {
     await Promise.all([
       (async () => {
@@ -32,6 +35,7 @@
           ...w,
           selected: false,
         }));
+        sortBy('count');
       })(),
     ]);
   });
@@ -45,6 +49,22 @@
     });
 
     words = words.filter((w) => !w.selected);
+  }
+
+  function sortBy(key: 'count' | 'frequency') {
+    if (sortKey === key) {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortOrder = 'desc';
+    }
+    words = [...words].sort((a, b) => {
+      const aValue = a[key] ?? 0;
+      const bValue = b[key] ?? 0;
+      if (aValue === bValue) return 0;
+      if (sortOrder === 'asc') return aValue - bValue;
+      return bValue - aValue;
+    });
   }
 </script>
 
@@ -67,8 +87,18 @@
           <th>✔</th>
           <th>단어</th>
           <th>뜻</th>
-          <th>매체 횟수</th>
-          <th>난이도</th>
+          <th class="sortable" onclick={() => sortBy('count')}>
+            매체 횟수
+            {#if sortKey === 'count'}
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            {/if}
+          </th>
+          <th class="sortable" onclick={() => sortBy('frequency')}>
+            난이도
+            {#if sortKey === 'frequency'}
+              {sortOrder === 'asc' ? '▲' : '▼'}
+            {/if}
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -84,7 +114,14 @@
               {/if}
             </td>
             <td>{word.count}</td>
-            <td>{(word.frequency / 100).toFixed(2)}</td>
+            <td>
+              <div class="star-rating">
+                <div class="star-rating-filled" style="width: {(1 - word.frequency) * 100}%">
+                  ★★★★★
+                </div>
+                <div class="star-rating-empty">☆☆☆☆☆</div>
+              </div>
+            </td>
           </tr>
         {/each}
       </tbody>
@@ -163,6 +200,11 @@
     thead {
       background-color: #f3f4f6;
       color: #374151;
+
+      .sortable {
+        text-decoration: underline;
+        cursor: pointer;
+      }
     }
 
     tr:hover {
@@ -173,5 +215,17 @@
   .no-meaning {
     color: #9ca3af;
     font-style: italic;
+  }
+
+  .star-rating {
+    position: relative;
+    width: fit-content;
+    margin: 0 auto;
+
+    .star-rating-filled {
+      position: absolute;
+      left: 0;
+      overflow: hidden;
+    }
   }
 </style>
