@@ -74,7 +74,18 @@ export async function getYoutubeSubtitle(_locale: string, url: string) {
   const locale = _locale.split('-')[0] ?? 'en';
   const ytdlpFile = path.join(vendorFolderName, ytdlpName);
   const proc = Bun.spawn(
-    [ytdlpFile, '--skip-download', '--write-sub', '--sub-lang', locale, '-o', 'temp', url],
+    [
+      ytdlpFile,
+      '--skip-download',
+      '--write-sub',
+      '--sub-lang',
+      locale,
+      '--retries',
+      '20',
+      '-o',
+      'temp',
+      url,
+    ],
     { cwd: vendorFolderName },
   );
   await proc.exited;
