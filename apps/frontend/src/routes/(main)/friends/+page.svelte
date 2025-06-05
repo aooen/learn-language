@@ -1,24 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import type { User } from '$lib/types/user';
   import { client } from '$lib/utils/api';
+  import { getImageUrl } from '$lib/utils/user';
 
-  type Friend = {
-    id: number;
-    username: string;
-    image?: string | null;
-  };
-
-  let friends = $state<Friend[]>([]);
+  let friends = $state<Pick<User, 'id' | 'username' | 'image'>[]>([]);
   let error = $state('');
   let newFriendUsername = $state('');
-
-  function getImageUrl(path: string): string {
-    if (path.startsWith('http') || path === '') {
-      return path;
-    }
-    return `${import.meta.env.VITE_API_URL}${path}`;
-  }
 
   async function fetchFriends() {
     try {

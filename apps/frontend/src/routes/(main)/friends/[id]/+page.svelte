@@ -1,22 +1,13 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { onMount } from 'svelte';
+  import { getLangText } from '$lib/constants/lang';
+  import type { User } from '$lib/types/user';
   import { client } from '$lib/utils/api';
-
-  type User = Omit<
-    Awaited<ReturnType<Awaited<ReturnType<(typeof client.user.me)['$get']>>['json']>>['user'],
-    'password'
-  >;
+  import { getImageUrl } from '$lib/utils/user';
 
   let error = $state('');
   let user = $state<User | null>(null);
-
-  function getImageUrl(path: string): string {
-    if (path.startsWith('http') || path === '') {
-      return path;
-    }
-    return `${import.meta.env.VITE_API_URL}${path}`;
-  }
 
   onMount(async () => {
     const id = page.params.id;
@@ -47,8 +38,8 @@
 
       <div class="lang-grid">
         <div><strong>아이디</strong><br />{user.username}</div>
-        <div><strong>모국어</strong><br />{user.motherLang}</div>
-        <div><strong>목표 언어</strong><br />{user.targetLang}</div>
+        <div><strong>모국어</strong><br />{getLangText(user.motherLang)}</div>
+        <div><strong>목표 언어</strong><br />{getLangText(user.targetLang)}</div>
       </div>
 
       <div class="stats">

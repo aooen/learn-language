@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { getLangText } from '$lib/constants/lang';
+  import type { User } from '$lib/types/user';
   import { client } from '$lib/utils/api';
-
-  type User = Omit<
-    Awaited<ReturnType<Awaited<ReturnType<(typeof client.user.me)['$get']>>['json']>>['user'],
-    'password'
-  >;
+  import { getImageUrl } from '$lib/utils/user';
+  import { updateJwt } from '$lib/stores/auth.svelte';
 
   let user = $state<User | null>(null);
 
@@ -127,11 +127,9 @@
     }
   }
 
-  function getImageUrl(path: string): string {
-    if (path.startsWith('http') || path === '') {
-      return path;
-    }
-    return `${import.meta.env.VITE_API_URL}${path}`;
+  function logout() {
+    updateJwt(null);
+    goto('/');
   }
 </script>
 
@@ -172,8 +170,8 @@
 
       <div class="info-grid">
         <div><strong>아이디</strong><br />{user.username}</div>
-        <div><strong>모국어</strong><br />{user.motherLang}</div>
-        <div><strong>목표 언어</strong><br />{user.targetLang}</div>
+        <div><strong>모국어</strong><br />{getLangText(user.motherLang)}</div>
+        <div><strong>목표 언어</strong><br />{getLangText(user.targetLang)}</div>
       </div>
 
       <div class="stat-grid">
@@ -206,6 +204,8 @@
         <button type="submit">변경하기</button>
       </form>
     </div>
+
+    <button class="dangerous" onclick={logout}>로그아웃</button>
   {/if}
 </div>
 
@@ -286,6 +286,7 @@
   }
 
   button {
+    width: 100%;
     padding: 0.75rem;
     border: none;
     border-radius: 6px;
@@ -295,7 +296,15 @@
     cursor: pointer;
 
     &:hover {
-      background-color: #005bb5;
+      background-color: darken(#0070f3, 10%);
+    }
+
+    &.dangerous {
+      background-color: #f30020;
+
+      &:hover {
+        background-color: darken(#f30020, 10%);
+      }
     }
   }
 
