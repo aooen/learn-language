@@ -76,7 +76,7 @@ const app = new Hono<Env>().post(
       await db.insert(wordTable).values(
         filteredWords.map((stem): typeof wordTable.$inferInsert => ({
           word: stem,
-          meaning: meaningMap[stem],
+          meaning: meaningMap[stem]?.slice(0, 250),
           count: stemCount[stem] ?? 0,
           frequency: frequencyMap[stem] ?? 0,
           wordlistId,
