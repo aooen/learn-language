@@ -6,12 +6,12 @@ import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteTy
 
 import { zValidator } from '~/utils/validator-wrapper';
 import { getYoutubeSubtitle } from '~/utils/ytdlp';
-import { crawlMeanings } from '~/crawler/daum-dict';
 import type { Env } from '~/types/hono';
 import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
 import { getWordFrequencies } from '~/utils/corpus';
+import { requestTranslation, requestMeaning } from '~/utils/llm';
 import { parseWebVTT } from '~/utils/subtitle';
 import { subtitleTable } from '~/schemas/subtitle';
 
@@ -48,15 +48,42 @@ const app = new Hono<Env>().post(
           const vttText = await getYoutubeSubtitle(locale, data.url);
           const { subtitles, stemCount } = await parseWebVTT(vttText);
 
+          let koSubtitles: Record<string, string> = {};
+          // Consider max token size of LLM
+          for (let i = 0; i < subtitles.length; i += 100) {
+            const chunk = subtitles.slice(i, i + 100).map(({ subtitle }) => subtitle);
+            // Explicit indices are used to prevent desynchronization
+            const translatedChunk = await requestTranslation(
+              chunk.reduce<Record<string, string>>(
+                (obj, cur, index) => ({
+                  ...obj,
+                  [`${i}-${index}`]: cur,
+                }),
+                {},
+              ),
+            );
+            koSubtitles = {
+              ...koSubtitles,
+              ...Object.entries(translatedChunk).reduce<Record<string, string>>(
+                (acc, [key, value]) => {
+                  const index = parseInt(key.split('-')[1]!, 10);
+                  acc[i + index] = value;
+                  return acc;
+                },
+                {},
+              ),
+            };
+          }
+
           await tx.insert(subtitleTable).values(
-            subtitles.map((subtitle) => ({
+            subtitles.map((subtitle, index) => ({
               ...subtitle,
               wordlistId,
-              koSubtitle: '',
+              koSubtitle: koSubtitles[index] ?? '',
             })),
           );
 
-          const meaningMap = await crawlMeanings(Object.keys(stemCount));
+          const meaningMap = await requestMeaning(Object.keys(stemCount));
           const frequencyMap = await getWordFrequencies(locale, Object.keys(stemCount));
 
           const [{ affectedRows }] = await tx.insert(wordTable).values(
