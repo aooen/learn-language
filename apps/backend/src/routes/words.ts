@@ -1,11 +1,13 @@
 import { Hono } from 'hono';
+import natural from 'natural';
 import { z } from 'zod';
 import { zValidator } from '~/utils/validator-wrapper';
 import { wordTable } from '~/schemas/word';
 import { db } from '~/utils/db';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { Env } from '~/types/hono';
-import natural from 'natural';
+
+const stemmer = natural.PorterStemmer;
 
 const app = new Hono<Env>()
   .get('/:wordlistId', async (c) => {
@@ -32,30 +34,31 @@ const app = new Hono<Env>()
     zValidator(
       'json',
       z.object({
+        wordlistId: z.string(),
         word: z.string(),
       }),
     ),
     async (c) => {
       const data = c.req.valid('json');
-      const stemmer = natural.PorterStemmer;
-      const processedWord = stemmer.stem(data.word.toLowerCase());
+      const processedWord = stemmer.stem(data.word.replace(/[^a-zA-Z]/g, '').toLowerCase());
 
       const result = await db
         .select({
           koWord: wordTable.meaning,
-          enWord: wordTable.word
+          enWord: wordTable.word,
         })
         .from(wordTable)
-        .where(eq(wordTable.word, processedWord));
+        .where(
+          and(eq(wordTable.word, processedWord), eq(wordTable.wordlistId, Number(data.wordlistId))),
+        );
 
-      const modifiedResult = result.map(item => ({
+      const modifiedResult = result.map((item) => ({
         ...item,
-        enWord: data.word
+        enWord: data.word,
       }));
 
       return c.json(modifiedResult);
-    }
+    },
   );
 
 export default app;
-

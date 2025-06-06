@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import * as cheerio from 'cheerio';
-import natural from 'natural';
 import { z } from 'zod';
 import { determineSiteType, SiteType } from '@learn-language/shared/utils/siteType';
 
@@ -13,8 +12,8 @@ import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
 import { getWordFrequencies } from '~/utils/corpus';
-
-const stemmer = natural.PorterStemmer;
+import { parseWebVTT } from '~/utils/subtitle';
+import { subtitleTable } from '~/schemas/subtitle';
 
 const app = new Hono<Env>().post(
   '/',
@@ -36,54 +35,51 @@ const app = new Hono<Env>().post(
 
     const sourceType = determineSiteType(data.url);
 
-    const [{ insertId: wordlistId }] = await db.insert(wordlistTable).values({
-      title,
-      userId,
-      sourceType,
-      sourceUrl: data.url,
-    });
+    const { wordlistId, affectedRows } =
+      (await db.transaction(async (tx) => {
+        const [{ insertId: wordlistId }] = await tx.insert(wordlistTable).values({
+          title,
+          userId,
+          sourceType,
+          sourceUrl: data.url,
+        });
 
-    if (sourceType === SiteType.Youtube) {
-      const vttText = await getYoutubeSubtitle(locale, data.url);
-      const lines = vttText.split('\n');
-      const stemCount: Record<string, number> = {};
+        if (sourceType === SiteType.Youtube) {
+          const vttText = await getYoutubeSubtitle(locale, data.url);
+          const { subtitles, stemCount } = await parseWebVTT(vttText);
 
-      for (const line of lines) {
-        if (line.includes('-->') || line.startsWith('WEBVTT') || line.trim() === '') continue;
+          await tx.insert(subtitleTable).values(
+            subtitles.map((subtitle) => ({
+              ...subtitle,
+              wordlistId,
+              koSubtitle: '',
+            })),
+          );
 
-        const wordList = line.split(/\W+/).filter(Boolean);
-        for (const w of wordList) {
-          const cleaned = w
-            .replace(/[^a-zA-Z]/g, '')
-            .toLowerCase()
-            .trim();
-          // 유효하지 않은 단어 스킵
-          if (cleaned.length < 2) {
-            continue;
-          }
+          const meaningMap = await crawlMeanings(Object.keys(stemCount));
+          const frequencyMap = await getWordFrequencies(locale, Object.keys(stemCount));
 
-          const stem = stemmer.stem(cleaned);
-          stemCount[stem] = (stemCount[stem] || 0) + 1;
+          const [{ affectedRows }] = await tx.insert(wordTable).values(
+            Object.entries(stemCount).map(([stem, count]) => ({
+              word: stem,
+              meaning: meaningMap[stem]?.slice(0, 250),
+              count,
+              frequency: frequencyMap[stem] ?? 0,
+              wordlistId,
+            })),
+          );
+
+          return {
+            wordlistId,
+            affectedRows,
+          };
         }
-      }
+      })) ?? {};
 
-      const stemWords = Object.keys(stemCount);
-      const filteredWords = stemWords.filter((w) => /^[a-zA-Z]{2,}$/.test(w));
-
-      const meaningMap = await crawlMeanings(filteredWords);
-      const frequencyMap = await getWordFrequencies(locale, filteredWords);
-
-      await db.insert(wordTable).values(
-        filteredWords.map((stem): typeof wordTable.$inferInsert => ({
-          word: stem,
-          meaning: meaningMap[stem]?.slice(0, 250),
-          count: stemCount[stem] ?? 0,
-          frequency: frequencyMap[stem] ?? 0,
-          wordlistId,
-        })),
-      );
-      return c.json({ success: true, wordlistId, count: filteredWords.length });
+    if (typeof affectedRows === 'number' && affectedRows > 0) {
+      return c.json({ success: true, wordlistId, count: affectedRows });
     }
+
     throw new HTTPException(400, { message: 'Invalid url' });
   },
 );

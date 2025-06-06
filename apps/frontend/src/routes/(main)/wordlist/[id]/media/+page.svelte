@@ -1,52 +1,39 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import clsx from 'clsx';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import { SiteType } from '@learn-language/shared/utils/siteType';
+
+  type SubtitleItem = Awaited<
+    ReturnType<Awaited<ReturnType<(typeof client.mediaInfo)[':wordlistId']['$get']>>['json']>
+  >[number];
 
   let player: InstanceType<Window['YT']['Player']>;
   let fullUrl = $state<string | null>(null);
 
   const wordlistId = $derived(page.params['id']);
-  const youtubeVideoID = 'youtube-player';
+  const VIDEO_CONTAINER_ID = 'youtube-player';
 
   let notSupportedMedia = $state(false);
-  let showingEnSubtitleText = $state('');
-  let showingKoSubtitleText = $state(''); //화면에 표시할 한글 자막
-  let showingTimeLine = $state(''); // 화면에 표시할 시간
-  let abstractedSubtitle = $state<Caption[]>([]);
   let wordMean = $state<wordMeaning[]>([]);
-  let allSubtitle: SubtitleItem[] = $state([]); //자막을 담아둘 변수
-  let selectedWord: string | null = $state(''); //불러온 영단어를 저장할 변수
-  let selectedKoWord: string | null = $state(''); //불러온 한글뜻을 저장할 변수
-  let showWordOverlay = $state(false); //단어를 클릭하고, 화면에 출력하기 위한 변수
+  let allSubtitle: SubtitleItem[] = $state([]);
+  let selectedWord: string | null = $state('');
+  let selectedKoWord: string | null = $state('');
+  let showWordOverlay = $state(false);
+  let activeSubIndex = $state(-1);
+  let isSubtitleLoaded = $state(false);
+
   let subtitleContainer: HTMLDivElement;
   let userHasScrolled = false;
-  let scrollTimeout: ReturnType<typeof setTimeout>;
-  let activeSubIndex = $state(-1);
-
-  type Caption = {
-    start: number;
-    end: number;
-    text: string;
-    koText: string;
-  };
 
   type wordMeaning = {
     koWord: string;
     enWord: string;
   };
 
-  interface SubtitleItem {
-    timeLine: string;
-    text: string;
-    koText: string;
-    start: number;
-    end: number;
-  }
-
-  //유튜브 가져오기
+  // 유튜브 가져오기
   onMount(() => {
     async function load() {
       const res = await client.wordlist[':id'].$get({ param: { id: wordlistId } });
@@ -81,9 +68,7 @@
         return fullUrl;
       })();
 
-      player = new window.YT.Player(youtubeVideoID, {
-        height: '500',
-        width: '800',
+      player = new window.YT.Player(VIDEO_CONTAINER_ID, {
         videoId,
         playerVars: { autoplay: 0 },
         events: {
@@ -99,54 +84,20 @@
     }
   });
 
-  //자막 가져오기
-  async function fetchSubtitle(fullUrl: string) {
-    try {
-      const response = await client.mediaInfo.$post({ json: { fullUrl } });
-      abstractedSubtitle = (await response.json()) as Caption[];
-      allSubtitle = abstractedSubtitle.map((sub) => ({
-        text: sub.text,
-        koText: sub.koText,
-        timeLine: `${sub.start} ~ ${sub.end}`,
-        start: sub.start,
-        end: sub.end,
-      }));
-    } catch (error) {
-      console.error('자막 불러오기 실패:', error);
-    }
-  }
-
-  let isSubtitleLoaded = $state(false);
-
-  // 플레이어 준비 완료 후 자막 가져오기
-  async function handlePlayerReady() {
-    try {
-      await fetchSubtitle(fullUrl!);
-      player.playVideo();
-      isSubtitleLoaded = true;
-    } catch (error) {
-      console.error('자막 불러오기 실패:', error);
-    }
-
-    setInterval(() => {
+  // 자막 동기화 Interval 바인드
+  onMount(() => {
+    const intervalId = setInterval(() => {
       if (player && player.getCurrentTime) {
         const time = player.getCurrentTime();
-        const idx = allSubtitle.findIndex((sub) => time >= sub.start && time < sub.end);
+        const idx = allSubtitle.findIndex(
+          (sub) => time >= sub.startTime / 1000 && time < sub.endTime / 1000,
+        );
         if (idx !== -1 && idx !== activeSubIndex) {
-          if (
-            showingEnSubtitleText != null &&
-            showingKoSubtitleText != null &&
-            showingTimeLine != null
-          ) {
-            activeSubIndex = idx;
-            showingEnSubtitleText = allSubtitle[idx].text;
-            showingKoSubtitleText = allSubtitle[idx].koText;
-            showingTimeLine = allSubtitle[idx].timeLine;
-          }
+          activeSubIndex = idx;
         }
         if (!userHasScrolled) {
           setTimeout(() => {
-            const activeElem = document.getElementById(`subtitle-${activeSubIndex}`);
+            const activeElem = document.getElementById(`subtitle-${idx}`);
             if (activeElem && subtitleContainer) {
               const containerHeight = subtitleContainer.clientHeight;
               const elemOffset =
@@ -157,22 +108,33 @@
         }
       }
     }, 100);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  });
+
+  // 플레이어 준비 완료 후 자막 가져오기
+  async function handlePlayerReady() {
+    try {
+      const response = await client.mediaInfo[':wordlistId'].$get({ param: { wordlistId } });
+      allSubtitle = await response.json();
+
+      player.playVideo();
+      isSubtitleLoaded = true;
+    } catch (error) {
+      console.error('자막 불러오기 실패:', error);
+    }
   }
 
-  //스크롤 핸들러
+  // 스크롤 핸들러
+  let scrollTimeout: ReturnType<typeof setTimeout>;
   function handleScroll() {
     if (subtitleContainer.scrollTop !== 0) {
       userHasScrolled = true;
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         userHasScrolled = false;
-        const activeElem = document.getElementById(`subtitle-${activeSubIndex}`); // 3초 후 현재 자막 위치로 자동 스크롤 복귀
-        if (activeElem && subtitleContainer) {
-          const containerHeight = subtitleContainer.clientHeight;
-          const elemOffset =
-            activeElem.offsetTop - containerHeight / 2 + activeElem.clientHeight / 2;
-          subtitleContainer.scrollTo({ top: elemOffset, behavior: 'smooth' });
-        }
       }, 3000);
     }
   }
@@ -180,7 +142,7 @@
   // 단어 클릭 핸들러
   async function handleWordClick(word: string) {
     try {
-      const response = await client.words.find.$post({ json: { word } });
+      const response = await client.words.find.$post({ json: { wordlistId, word } });
       wordMean = (await response.json()) as wordMeaning[];
       player.pauseVideo();
 
@@ -196,7 +158,7 @@
   function splitWords(text: string): string[] {
     let firstStep = text.trim().split(/\s+/);
 
-    //띄어쓰기와 함께 ,와.와!나,?같은 부호기호를 제거해야함
+    // 띄어쓰기와 함께 ,와.와!나,?같은 부호기호를 제거해야함
     let words: string[] = firstStep.map((word) => {
       const cleanedWord = word.replace(/^[,.!?]+|[,.!?]+$/g, '');
       return cleanedWord;
@@ -205,7 +167,7 @@
     return words.filter((w) => w.length > 0);
   }
 
-  //오버레이한 뜻 창을 닫는다.
+  // 오버레이한 뜻 창을 닫는다.
   function closeOverlay() {
     showWordOverlay = false;
     selectedWord = null;
@@ -219,9 +181,11 @@
 </svelte:head>
 
 <div class="videoWrapper">
+  <a class="back-link" href={`/wordlist/${wordlistId}`}> 단어장으로 돌아가기 </a>
+
   <div id="main-container">
     <div id="main-wrapper">
-      <div id={youtubeVideoID}>
+      <div id={VIDEO_CONTAINER_ID}>
         <!--이 영역은 유튜브가 출력됨니다.-->
       </div>
 
@@ -233,7 +197,7 @@
         <div class="loading-message">지원하지 않는 미디어입니다.</div>
       {/if}
 
-      <div class="subtitle-container" bind:this={subtitleContainer} onscroll={handleScroll}>
+      <div class="subtitle-container" bind:this={subtitleContainer} onwheel={handleScroll}>
         {#if showWordOverlay}
           <div
             class="overlayOff"
@@ -261,7 +225,7 @@
           </div>
         {/if}
 
-        {#each allSubtitle as subtitle, i (subtitle.timeLine)}
+        {#each allSubtitle as subtitle, i (subtitle.id)}
           <div
             id={'subtitle-' + i}
             class={clsx('subtitle-item', {
@@ -269,9 +233,11 @@
               previous: i !== activeSubIndex,
             })}
           >
-            <div class="timeline">{subtitle.timeLine}</div>
+            <div class="timeline">
+              {(subtitle.startTime / 1000).toFixed(1)}초 ~ {(subtitle.endTime / 1000).toFixed(1)}초
+            </div>
             <div class="text">
-              {#each splitWords(subtitle.text) as word, idx (idx)}
+              {#each splitWords(subtitle.subtitle) as word, idx (idx)}
                 <span
                   role="button"
                   tabindex="0"
@@ -287,7 +253,7 @@
                 </span>
               {/each}
             </div>
-            <div class="koText">{subtitle.koText}</div>
+            <div class="koText">{subtitle.koSubtitle}</div>
           </div>
         {/each}
       </div>
@@ -319,10 +285,25 @@
     max-width: 800px;
   }
 
+  .back-link {
+    width: 100%;
+    max-width: 800px;
+    padding: 0.75rem;
+    margin-bottom: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: #0070f3;
+    color: #fff;
+    font-size: 0.9em;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+  }
+
   #youtube-player {
-    width: 800px;
-    height: 500px;
-    margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 16 / 9;
   }
 
   .loading-message {
@@ -346,7 +327,6 @@
     padding: 28px 56px;
     border-radius: 32px;
     font-size: 1.8rem;
-    min-width: 420px;
     max-width: 800px;
     text-align: center;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.13);
@@ -357,17 +337,23 @@
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     justify-content: flex-start;
     scroll-behavior: auto;
     overflow-anchor: none;
     gap: 12px;
     position: relative;
+    scrollbar-width: none;
+
+    @media (max-width: 480px) {
+      padding: 10px;
+      font-size: 1rem;
+    }
   }
 
   .subtitle-item {
     transition:
-      opacity 0.3s ease,
+      color 0.3s ease,
       font-size 0.3s ease;
     margin-bottom: 10px;
     padding: 10px 0;
@@ -375,22 +361,29 @@
 
     &.current {
       font-weight: bold;
-      font-size: 2rem;
+      font-size: 1.2em;
       color: #000;
       opacity: 1;
     }
 
     &.previous {
       opacity: 0.7;
-      font-size: 1.5rem;
       color: #666;
+    }
+
+    @media (max-width: 480px) {
+      padding: 0;
     }
   }
 
   .timeline {
-    font-size: 0.9rem;
+    font-size: 0.5em;
     color: #1976d2;
     margin-bottom: 4px;
+
+    @media (max-width: 480px) {
+      font-size: 0.6rem;
+    }
   }
 
   .text {
@@ -427,7 +420,7 @@
 
   .overlayOn {
     background: white;
-    padding: 2rem;
+    padding: 2em;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     max-width: 80%;
