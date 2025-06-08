@@ -8,6 +8,7 @@
 
   let error = $state('');
   let user = $state<User | null>(null);
+  let quizCount = $state(0);
 
   onMount(async () => {
     const id = page.params.id;
@@ -16,6 +17,7 @@
       if (res.ok) {
         const data = await res.json();
         user = data.user;
+        quizCount = data.quizCount;
       } else {
         error = await res.text();
       }
@@ -45,11 +47,11 @@
       <div class="stats">
         <div class="stat-item">
           <h4>총 학습 단어</h4>
-          <p>--</p>
+          <p>{quizCount}</p>
         </div>
         <div class="stat-item">
           <h4>레벨</h4>
-          <p>--</p>
+          <p>{Math.floor(quizCount / 100) + 1}</p>
         </div>
       </div>
     </section>

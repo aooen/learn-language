@@ -22,6 +22,7 @@
     }
     const json = await res.json();
     userStore.user = json.user;
+    userStore.quizCount = json.quizCount;
     updateJwt(json.token);
   });
 

@@ -65,11 +65,12 @@ const app = new Hono<Env>()
       await db
         .update(quizTable)
         .set({ progress: quiz.progress, due: quiz.due })
-        .where(eq(quizTable.id, quiz.id));
+        .where(eq(quizTable.quizSetId, Number(quizSetId)));
       await db.insert(quizSetLogTable).values({
         quizSetId: quiz.quizSetId,
         studyDate: new Date(),
         learnedQuizId: quiz.id,
+        userId,
       });
       return c.json({ success: true });
     } catch {}

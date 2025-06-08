@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getLangText } from '$lib/constants/lang';
-  import type { User } from '$lib/types/user';
   import { client } from '$lib/utils/api';
   import { getImageUrl } from '$lib/utils/user';
   import { updateJwt } from '$lib/stores/auth.svelte';
+  import { userStore } from '$lib/stores/user.svelte';
 
-  let user = $state<User | null>(null);
+  let user = $derived(userStore.user);
 
   let currentPw = $state('');
   let newPw = $state('');
@@ -16,23 +15,8 @@
   let error = $state<string | null>(null);
 
   let selectedFile = $state<File | null>(null);
-  let preview = $state<string>('');
+  let preview = $state<string | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
-
-  onMount(async () => {
-    try {
-      const res = await client.user.me.$get();
-      if (res.ok) {
-        const data = await res.json();
-        user = data.user;
-        preview = user.image;
-      } else {
-        error = '사용자 정보를 불러오는 데 실패했습니다';
-      }
-    } catch {
-      error = '서버와 통신 중 오류가 발생했습니다';
-    }
-  });
 
   function showMsg(message: string) {
     msg = message;
@@ -157,7 +141,11 @@
           }
         }}
       >
-        <img src={getImageUrl(preview)} alt="프로필 이미지" class="profile-image hoverable" />
+        <img
+          src={getImageUrl(preview ?? user.image)}
+          alt="프로필 이미지"
+          class="profile-image hoverable"
+        />
         <p class="hint">클릭하여 프로필 이미지 수정</p>
       </div>
       <input
@@ -177,11 +165,11 @@
       <div class="stat-grid">
         <div class="stat-item">
           <h4>총 학습 단어</h4>
-          <p>--</p>
+          <p>{userStore.quizCount}</p>
         </div>
         <div class="stat-item">
           <h4>레벨</h4>
-          <p>--</p>
+          <p>{Math.floor(userStore.quizCount / 100) + 1}</p>
         </div>
       </div>
     </div>
@@ -210,6 +198,8 @@
 </div>
 
 <style lang="scss">
+  @use 'sass:color';
+
   .mypage-wrapper {
     max-width: 600px;
     margin: 2rem auto;
@@ -296,14 +286,14 @@
     cursor: pointer;
 
     &:hover {
-      background-color: darken(#0070f3, 10%);
+      background-color: color.adjust(#0070f3, $lightness: 10%);
     }
 
     &.dangerous {
       background-color: #f30020;
 
       &:hover {
-        background-color: darken(#f30020, 10%);
+        background-color: color.adjust(#f30020, $lightness: 10%);
       }
     }
   }

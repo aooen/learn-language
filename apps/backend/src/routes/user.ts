@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import * as jdenticon from 'jdenticon';
 
 import { userTable } from '~/schemas/user';
+import { quizSetLogTable } from '~/schemas/quizSetLog';
 import { zValidator } from '~/utils/validator-wrapper';
 import { db } from '~/utils/db';
 import type { Env } from '~/types/hono';
@@ -106,8 +107,15 @@ const app = new Hono<Env>()
     if (!user) {
       throw new HTTPException(404, { message: 'Not found user' });
     }
+    const { count: quizCount } = (
+      await db
+        .select({ count: count() })
+        .from(quizSetLogTable)
+        .where(eq(quizSetLogTable.userId, user.id))
+    )[0]!;
     return c.json({
       user,
+      quizCount,
       token: await sign(
         {
           sub: user.id,

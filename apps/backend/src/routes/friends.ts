@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { db } from '~/utils/db';
 import { friendsTable } from '~/schemas/friends';
 import { userTable } from '~/schemas/user';
+import { quizSetLogTable } from '~/schemas/quizSetLog';
 import { zValidator } from '~/utils/validator-wrapper';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 import type { Env } from '../types/hono.ts';
 
 const app = new Hono<Env>()
@@ -76,7 +77,17 @@ const app = new Hono<Env>()
       .where(eq(userTable.id, friendId));
 
     if (!user) return c.text('User not found', 404);
-    return c.json({ user });
+
+    const { count: quizCount } = (
+      await db
+        .select({ count: count() })
+        .from(quizSetLogTable)
+        .where(eq(quizSetLogTable.userId, user.id))
+    )[0]!;
+    return c.json({
+      user,
+      quizCount,
+    });
   });
 
 export default app;
