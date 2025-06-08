@@ -81,7 +81,7 @@ const app = new Hono<Env>()
             sourceType: 'text',
           });
 
-          const stemCount = countStem(data.text);
+          const stemCount = await countStem(data.text);
           const meaningMap = await requestMeaning(Object.keys(stemCount));
           const frequencyMap = await getWordFrequencies(locale, Object.keys(stemCount));
 
@@ -120,36 +120,14 @@ const app = new Hono<Env>()
 
           if (sourceType === SiteType.Youtube) {
             const vttText = await getYoutubeSubtitle(locale, getYoutubeId(data.url));
-            const { subtitles, stemCount } = await parseWebVTT(vttText);
+            const subtitles = parseWebVTT(vttText);
+            const stemCount = await countStem(subtitles.map((s) => s.subtitle));
 
             await updateCollectingState({ progress: '0.33' });
 
-            let koSubtitles: Record<string, string> = {};
-            // Consider max token size of LLM
-            for (let i = 0; i < subtitles.length; i += 100) {
-              const chunk = subtitles.slice(i, i + 100).map(({ subtitle }) => subtitle);
-              // Explicit indices are used to prevent desynchronization
-              const translatedChunk = await requestTranslation(
-                chunk.reduce<Record<string, string>>(
-                  (obj, cur, index) => ({
-                    ...obj,
-                    [`${i}-${index}`]: cur,
-                  }),
-                  {},
-                ),
-              );
-              koSubtitles = {
-                ...koSubtitles,
-                ...Object.entries(translatedChunk).reduce<Record<string, string>>(
-                  (acc, [key, value]) => {
-                    const index = parseInt(key.split('-')[1]!, 10);
-                    acc[i + index] = value;
-                    return acc;
-                  },
-                  {},
-                ),
-              };
-            }
+            let koSubtitles: string[] = await requestTranslation(
+              subtitles.map(({ subtitle }) => subtitle),
+            );
 
             await tx.insert(subtitleTable).values(
               subtitles.map((subtitle, index) => ({
