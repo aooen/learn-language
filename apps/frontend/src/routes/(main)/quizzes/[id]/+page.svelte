@@ -30,22 +30,20 @@
       return;
     }
 
-    if (quiz.progress > 100) {
-      // quiz done
-      flipped = false;
-      retired.push(quiz);
-      return;
-    }
-
     quiz.progress = Math.min(quiz.progress + buttonType.progress, 100);
     quiz.due = buttonType.later;
 
-    queue.push(quiz);
+    if (quiz.progress >= 100) {
+      retired.push(quiz);
+    } else {
+      queue.push(quiz);
+    }
+
     client.quizSet[':id'].$put({
       param: {
         id: quizSetId,
       },
-      json: [...retired, ...queue.heap],
+      json: quiz,
     });
 
     tried = false;

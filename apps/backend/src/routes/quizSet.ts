@@ -46,10 +46,10 @@ const app = new Hono<Env>()
     } catch {}
     throw new HTTPException(404, { message: 'Not found quizSet' });
   })
-  .put('/:id', zValidator('json', z.array(Quiz)), async (c) => {
+  .put('/:id', zValidator('json', Quiz), async (c) => {
     const userId = c.get('userId');
     const quizSetId = c.req.param('id');
-    const data = c.req.valid('json');
+    const quiz = c.req.valid('json');
     try {
       const { count: quizSetCount } = (
         await db
@@ -62,17 +62,15 @@ const app = new Hono<Env>()
         throw new Error();
       }
 
-      for (const q of data) {
-        await db
-          .update(quizTable)
-          .set({ progress: q.progress, due: q.due })
-          .where(eq(quizTable.id, q.id));
-        await db.insert(quizSetLogTable).values({
-          quizSetId: q.quizSetId,
-          studyDate: new Date(),
-          learnedQuizId: q.id,
-        });
-      }
+      await db
+        .update(quizTable)
+        .set({ progress: quiz.progress, due: quiz.due })
+        .where(eq(quizTable.id, quiz.id));
+      await db.insert(quizSetLogTable).values({
+        quizSetId: quiz.quizSetId,
+        studyDate: new Date(),
+        learnedQuizId: quiz.id,
+      });
       return c.json({ success: true });
     } catch {}
     throw new HTTPException(404, { message: 'Not found quizId' });
