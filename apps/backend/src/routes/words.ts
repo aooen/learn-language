@@ -1,14 +1,13 @@
 import { Hono } from 'hono';
 import { and, eq, inArray } from 'drizzle-orm';
-import natural from 'natural';
 import { z } from 'zod';
 import { zValidator } from '~/utils/validator-wrapper';
 import { wordTable } from '~/schemas/word';
 import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
+import { sanitizeWord } from '~/utils/stem';
 import type { Env } from '~/types/hono';
-
-const stemmer = natural.PorterStemmer;
+import { cacheStemTable } from '~/schemas/cacheStem';
 
 const app = new Hono<Env>()
   .get('/:wordlistId', async (c) => {
@@ -55,7 +54,7 @@ const app = new Hono<Env>()
     ),
     async (c) => {
       const data = c.req.valid('json');
-      const processedWord = stemmer.stem(data.word.replace(/[^a-zA-Z]/g, '').toLowerCase());
+      const word = sanitizeWord(data.word);
 
       const result = await db
         .select({
@@ -64,15 +63,19 @@ const app = new Hono<Env>()
         })
         .from(wordTable)
         .where(
-          and(eq(wordTable.word, processedWord), eq(wordTable.wordlistId, Number(data.wordlistId))),
+          and(
+            eq(
+              wordTable.word,
+              db
+                .select({ stem: cacheStemTable.stem })
+                .from(cacheStemTable)
+                .where(and(eq(cacheStemTable.language, 'en-US'), eq(cacheStemTable.word, word))),
+            ),
+            eq(wordTable.wordlistId, Number(data.wordlistId)),
+          ),
         );
 
-      const modifiedResult = result.map((item) => ({
-        ...item,
-        enWord: data.word,
-      }));
-
-      return c.json(modifiedResult);
+      return c.json(result);
     },
   );
 
