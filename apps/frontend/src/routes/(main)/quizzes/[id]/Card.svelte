@@ -1,5 +1,15 @@
 <script lang="ts">
-  let { front, back, flipped, progress } = $props();
+  let {
+    front,
+    back,
+    flipped = false,
+    progress,
+  }: {
+    front: string;
+    back?: string;
+    flipped?: boolean;
+    progress?: number;
+  } = $props();
 </script>
 
 <div class="cardContainer">
@@ -12,10 +22,13 @@
       {front}
     </div>
   {/if}
-  <div class="progress">
-    <div class="progress-bar" style="width: {progress}%;"></div>
-    <span class="progress-text">Progress: {progress}%</span>
-  </div>
+
+  {#if progress !== undefined}
+    <div class="progress">
+      <div class="progress-bar" style="width: {progress}%;"></div>
+      <span class="progress-text">Progress: {progress}%</span>
+    </div>
+  {/if}
 </div>
 
 <style>

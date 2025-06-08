@@ -1,169 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
   import { client } from '$lib/utils/api';
   import Card from './Card.svelte';
-  import { goto } from '$app/navigation';
-
-  type Quiz = {
-    id: number;
-    front: string;
-    back: string;
-    progress: number;
-    sentenceFrom: string;
-    due: number; // timestamp
-    quizSetId: number;
-  };
+  import { type Quiz, MinHeap, ButtonType } from './utils.svelte';
 
   const quizSetId = $derived(page.params['id']);
-
-  class MinHeap {
-    heap: Quiz[] = $state([]);
-
-    private getParentIndex(index: number): number {
-      return Math.floor((index - 1) / 2);
-    }
-
-    private getLeftChildIndex(index: number): number {
-      return 2 * index + 1;
-    }
-
-    private getRightChildIndex(index: number): number {
-      return 2 * index + 2;
-    }
-
-    private swap(i: number, j: number): void {
-      [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
-    }
-
-    push(quiz: Quiz): void {
-      this.heap.push(quiz);
-      this.heapifyUp();
-    }
-
-    pop(): Quiz | null {
-      if (this.heap.length === 0) return null;
-      if (this.heap.length === 1) return this.heap.pop() || null;
-
-      const root = this.heap[0];
-      this.heap[0] = this.heap.pop()!;
-      this.heapifyDown();
-      return root;
-    }
-
-    peek(): Quiz | null {
-      return this.heap.length > 0 ? this.heap[0] : null;
-    }
-
-    size(): number {
-      return this.heap.length;
-    }
-
-    private heapifyUp(): void {
-      let index = this.heap.length - 1;
-      while (
-        this.getParentIndex(index) >= 0 &&
-        this.heap[this.getParentIndex(index)].due > this.heap[index].due
-      ) {
-        this.swap(index, this.getParentIndex(index));
-        index = this.getParentIndex(index);
-      }
-    }
-
-    private heapifyDown(): void {
-      let index = 0;
-      const length = this.heap.length;
-      while (this.getLeftChildIndex(index) < length) {
-        let smallerChildIndex = this.getLeftChildIndex(index);
-        const rightChildIndex = this.getRightChildIndex(index);
-
-        if (
-          rightChildIndex < length &&
-          this.heap[rightChildIndex].due < this.heap[smallerChildIndex].due
-        ) {
-          smallerChildIndex = rightChildIndex;
-        }
-
-        if (this.heap[index].due <= this.heap[smallerChildIndex].due) break;
-
-        this.swap(index, smallerChildIndex);
-        index = smallerChildIndex;
-      }
-    }
-  }
-
-  class ButtonType {
-    // Defining ButtonTypes Enum
-    static readonly Again = new ButtonType('Again', 1, 0);
-    static readonly Hard = new ButtonType('Hard', 6, 3);
-    static readonly Good = new ButtonType('Good', 10, 10);
-    static readonly Easy = new ButtonType('Easy', 1440, 30);
-
-    public readonly label: string;
-    public readonly later: number;
-    public readonly progress: number;
-
-    private constructor(label: string, later: number, progress: number) {
-      this.label = label;
-      this.later = later;
-      this.progress = progress;
-    }
-
-    toString(): string {
-      return this.label;
-    }
-
-    toClassName(): string {
-      return this.toString().toLowerCase();
-    }
-
-    static values(): ButtonType[] {
-      return [ButtonType.Again, ButtonType.Hard, ButtonType.Good, ButtonType.Easy];
-    }
-
-    static fromString(label: string): ButtonType | undefined {
-      return ButtonType.values().find((btn) => btn.label === label);
-    }
-
-    static readonly labelMap: Map<string, ButtonType> = new Map(
-      ButtonType.values().map((btn) => [btn.label, btn]),
-    );
-
-    static fromLabel(label: string): ButtonType | undefined {
-      return this.labelMap.get(label);
-    }
-  }
-
-  async function fetchQuizs(quizSetId: string) {
-    const res = await client.quizSet[':id'].$get({
-      param: {
-        id: quizSetId,
-      },
-    });
-    const quizs = await res.json();
-
-    const typedQuizs = quizs.map((x) => {
-      const newQuiz: Quiz = {
-        id: x.id,
-        front: x.front,
-        back: x.back,
-        progress: x.progress,
-        sentenceFrom: x.sentenceFrom,
-        due: x.due,
-        quizSetId: x.quizSetId,
-      };
-      return newQuiz;
-    });
-
-    return typedQuizs;
-  }
 
   const queue = new MinHeap();
   let retired: Quiz[] = $state([]);
 
   let flipped = $state(false);
   let tried = $state(false);
-  let done = $state(false);
+  let isLoading = $state(false);
+
+  const currentCard = $derived(queue.peek());
 
   function flip() {
     flipped = !flipped;
@@ -171,27 +23,24 @@
   }
 
   function update(buttonType: ButtonType) {
-    let target_quiz = queue.pop();
+    let quiz = queue.pop();
 
-    if (target_quiz) {
-      if (target_quiz.progress > 100) {
-        // quiz done
-        flipped = false;
-        retired.push(target_quiz);
-        return;
-      } else {
-        target_quiz.progress += buttonType.progress;
-        if (target_quiz.progress > 100) {
-          target_quiz.progress = 100;
-        }
-      }
-      target_quiz.due = buttonType.later;
-
-      queue.push(target_quiz);
-    } else {
-      //done
-      alert('done');
+    if (!quiz) {
+      // quiz must be exists.
+      return;
     }
+
+    if (quiz.progress > 100) {
+      // quiz done
+      flipped = false;
+      retired.push(quiz);
+      return;
+    }
+
+    quiz.progress = Math.min(quiz.progress + buttonType.progress, 100);
+    quiz.due = buttonType.later;
+
+    queue.push(quiz);
     client.quizSet[':id'].$put({
       param: {
         id: quizSetId,
@@ -204,25 +53,31 @@
   }
 
   onMount(async () => {
-    let typedQuizs = await fetchQuizs(quizSetId);
-    if (typedQuizs.length === 0) {
-      done = true;
-      return;
-    }
-    for (const quiz of typedQuizs) {
+    isLoading = true;
+
+    const res = await client.quizSet[':id'].$get({
+      param: {
+        id: quizSetId,
+      },
+    });
+    const quizzes = await res.json();
+    for (const quiz of quizzes) {
       if (quiz.progress >= 100) {
         retired.push(quiz);
         continue;
       }
       queue.push(quiz);
     }
-    if (queue.size() === 0) {
-      done = true;
-    }
+
+    isLoading = false;
   });
 </script>
 
-{#if !done}
+{#if isLoading}
+  <Card front="Loading" />
+{:else if !currentCard}
+  <Card front="All Done!" />
+{:else}
   <div class="wrapper">
     <div
       class="cardEventBox"
@@ -234,23 +89,19 @@
         if (e.key === 'Enter' || e.key === ' ') flip();
       }}
     >
-      {#if queue.heap.length != 0}
-        <Card
-          front={queue.heap[0].front}
-          back={queue.heap[0].back}
-          {flipped}
-          progress={queue.heap[0].progress}
-        ></Card>
-      {:else}
-        <Card front="Loading" back="Loading" {flipped} progress={0}></Card>
-      {/if}
+      <Card
+        front={currentCard.front}
+        back={currentCard.back}
+        {flipped}
+        progress={currentCard.progress}
+      />
     </div>
   </div>
   {#if tried}
     <div class="buttons">
       {#each ButtonType.values() as buttonType (buttonType.label)}
         <button
-          class={buttonType.toClassName()}
+          class={buttonType.name}
           onclick={() => {
             update(buttonType);
           }}
@@ -260,8 +111,6 @@
       {/each}
     </div>
   {/if}
-{:else}
-  <Card front="All Done!" back="We are updating your progress." {flipped} progress={0}></Card>
 {/if}
 
 <button class="go-back" onclick={() => goto('/quizzes/')}>Go Back</button>
