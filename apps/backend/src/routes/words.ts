@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
+import { and, eq, inArray } from 'drizzle-orm';
 import natural from 'natural';
 import { z } from 'zod';
 import { zValidator } from '~/utils/validator-wrapper';
 import { wordTable } from '~/schemas/word';
+import { wordlistTable } from '~/schemas/wordlist';
 import { db } from '~/utils/db';
-import { and, eq, inArray } from 'drizzle-orm';
 import type { Env } from '~/types/hono';
 
 const stemmer = natural.PorterStemmer;
@@ -24,8 +25,22 @@ const app = new Hono<Env>()
       }),
     ),
     async (c) => {
+      const userId = c.get('userId');
       const { ids } = c.req.valid('json');
-      await db.delete(wordTable).where(inArray(wordTable.id, ids));
+      await db
+        .delete(wordTable)
+        .where(
+          and(
+            inArray(wordTable.id, ids),
+            inArray(
+              wordTable.wordlistId,
+              db
+                .select({ wordlistId: wordlistTable.id })
+                .from(wordlistTable)
+                .where(eq(wordlistTable.userId, userId)),
+            ),
+          ),
+        );
       return c.json({ ok: true });
     },
   )

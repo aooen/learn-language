@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { client } from '$lib/utils/api';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { client } from '$lib/utils/api';
+  import { userStore } from '$lib/stores/user.svelte';
   import { SiteType } from '@learn-language/shared/utils/siteType';
 
   type Word = Awaited<
@@ -86,7 +87,9 @@
 
 {#if words.length > 0}
   <div class="button-group">
-    <button class="delete-btn" onclick={deleteSelectedWords}>선택 삭제</button>
+    {#if userStore.user && userStore.user.id === wordlist?.userId}
+      <button class="delete-btn" onclick={deleteSelectedWords}>선택 삭제</button>
+    {/if}
     <button class="media-btn" onclick={makeQuizSet}>퀴즈 만들기</button>
     {#if wordlist?.sourceType === SiteType.Youtube}
       <button class="media-btn" onclick={() => goto(`/wordlist/${wordlistId}/media`)}>

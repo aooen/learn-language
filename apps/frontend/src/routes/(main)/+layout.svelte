@@ -8,13 +8,11 @@
   import CheckboxOutlineIcon from 'virtual:icons/ion/checkbox-outline';
   import FileTrayFullOutlineIcon from 'virtual:icons/ion/file-tray-full-outline';
   import PeopleOutlineIcon from 'virtual:icons/ion/people-outline';
-  import type { User } from '$lib/types/user';
   import { updateJwt } from '$lib/stores/auth.svelte';
+  import { userStore } from '$lib/stores/user.svelte';
   import { getImageUrl } from '$lib/utils/user';
 
   let { children } = $props();
-
-  let user = $state<User | null>(null);
 
   onMount(async () => {
     const res = await client.user.me.$get();
@@ -23,7 +21,7 @@
       return goto('/');
     }
     const json = await res.json();
-    user = json.user;
+    userStore.user = json.user;
     updateJwt(json.token);
   });
 
@@ -56,10 +54,10 @@
     {@render item('quizzes', '퀴즈', CheckboxOutlineIcon)}
     {@render item('friends', '친구', PeopleOutlineIcon)}
 
-    {#if user}
+    {#if userStore.user}
       <a class="user" href="/mypage">
-        <img class="avatar" src={getImageUrl(user.image)} alt="프로필 이미지" />
-        <span>{user.username}</span>
+        <img class="avatar" src={getImageUrl(userStore.user.image)} alt="프로필 이미지" />
+        <span>{userStore.user.username}</span>
       </a>
     {/if}
   </nav>

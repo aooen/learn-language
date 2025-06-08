@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { eq } from 'drizzle-orm';
+import { and, count, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { quizTable } from '~/schemas/quiz';
@@ -24,8 +24,20 @@ const Quiz = z.object({
 
 const app = new Hono<Env>()
   .get('/:id', async (c) => {
+    const userId = c.get('userId');
     const quizSetId = c.req.param('id');
     try {
+      const { count: quizSetCount } = (
+        await db
+          .select({ count: count() })
+          .from(quizSetTable)
+          .where(and(eq(quizSetTable.id, Number(quizSetId)), eq(quizSetTable.maker, userId)))
+      )[0]!;
+
+      if (quizSetCount === 0) {
+        throw new Error();
+      }
+
       let quizs = await db
         .select()
         .from(quizTable)
@@ -35,8 +47,21 @@ const app = new Hono<Env>()
     throw new HTTPException(404, { message: 'Not found quizSet' });
   })
   .put('/:id', zValidator('json', z.array(Quiz)), async (c) => {
+    const userId = c.get('userId');
+    const quizSetId = c.req.param('id');
     const data = c.req.valid('json');
     try {
+      const { count: quizSetCount } = (
+        await db
+          .select({ count: count() })
+          .from(quizSetTable)
+          .where(and(eq(quizSetTable.id, Number(quizSetId)), eq(quizSetTable.maker, userId)))
+      )[0]!;
+
+      if (quizSetCount === 0) {
+        throw new Error();
+      }
+
       for (const q of data) {
         await db
           .update(quizTable)
