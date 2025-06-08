@@ -40,26 +40,30 @@
     height: 400px;
   }
   .card {
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
     height: 300px;
     display: flex;
+    margin: 0 10px 24px;
+    padding: 20px;
     justify-content: center;
     align-items: center;
     background: white;
     border-radius: 12px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    border: 1px solid #ddd;
+    border: 1px solid #eee;
     user-select: none;
-    margin-bottom: 24px;
+    font-size: 1.2rem;
   }
   .back {
-    background-color: aqua;
+    background-color: #cbe4ff;
   }
   .front {
-    background-color: deeppink;
+    background-color: #ffb6dd;
   }
   .progress {
-    width: 300px;
+    width: 100%;
+    max-width: 300px;
     height: 32px;
     background: #f3f4f6;
     border-radius: 16px;

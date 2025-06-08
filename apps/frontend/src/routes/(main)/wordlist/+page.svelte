@@ -84,20 +84,6 @@
     showInput = false;
     errorMsg = '';
   }
-  async function instatantiateQuizSet(id: number) {
-    const res = await client.quizSet.$post({ json: { wordlistId: Number(id) } });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success) {
-        alert('퀴즈 세트가 생성되었습니다.');
-      } else {
-        alert('퀴즈 세트 생성에 실패했습니다.');
-      }
-    } else {
-      alert('서버 오류로 퀴즈 세트 생성에 실패했습니다.');
-    }
-  }
 
   onMount(() => {
     fetchWordlists();
@@ -115,7 +101,6 @@
           <a class="entry" href={`/wordlist/${entry.id}`}>
             {entry.title}
           </a>
-          <button class="quizset" onclick={() => instatantiateQuizSet(entry.id)}>QuizIt</button>
           <button class="delete" onclick={() => deleteWordlist(entry.id)}>✖</button>
         </div>
       </li>
@@ -193,22 +178,12 @@
     text-decoration: none;
   }
 
-  .quizset,
   .delete {
     min-width: 17px;
     width: 30px; /* adjust as needed for text */
     padding: 4px 6px;
     font-size: 0.92rem;
     text-align: center;
-  }
-
-  .quizset {
-    min-width: 30px;
-    width: 60px;
-    padding: 4px 6px;
-    font-size: 0.92rem;
-    text-align: center;
-    margin-right: 4px;
   }
 
   .delete {

@@ -37,14 +37,16 @@
   <ul>
     {#each quizSets as set (set.id)}
       <li>
-        <a href={`/quizzes/${set.id}`}>QuizSet #{set.id}</a>
-        <span>(Wordlist: {set.wordlistId})</span>
+        <a class="title" href={`/quizzes/${set.id}`}>QuizSet #{set.id}</a>
+        <a class="wordlistLink" href={`/wordlist/${set.wordlistId}`}>단어장</a>
       </li>
     {/each}
   </ul>
 {/if}
 
 <style lang="scss">
+  @use 'sass:color';
+
   ul {
     list-style: none;
     padding: 0;
@@ -60,32 +62,29 @@
     padding: 20px 28px;
     display: flex;
     align-items: center;
-    transition:
-      box-shadow 0.2s,
-      transform 0.2s;
+    transition: background 0.2s;
 
-    span {
+    .title {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.15rem;
+      margin-right: 12px;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #1e40af;
+        text-decoration: underline;
+      }
+    }
+
+    .wordlistLink {
       color: #64748b;
       font-size: 1rem;
     }
 
     &:hover {
-      box-shadow: 0 6px 24px rgba(37, 99, 235, 0.12);
-      transform: translateY(-2px) scale(1.02);
-    }
-  }
-
-  a {
-    color: #2563eb;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.15rem;
-    margin-right: 12px;
-    transition: color 0.2s;
-
-    &:hover {
-      color: #1e40af;
-      text-decoration: underline;
+      background-color: color.adjust(#f9fafb, $lightness: -2%);
     }
   }
 </style>

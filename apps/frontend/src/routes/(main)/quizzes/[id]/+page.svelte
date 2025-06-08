@@ -117,7 +117,8 @@
 
 <style lang="scss">
   .cardEventBox {
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
   }
 
   .wrapper {
@@ -128,6 +129,7 @@
 
   .buttons {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
     margin-top: 20px;
@@ -146,8 +148,9 @@
   }
 
   button {
+    flex: 1;
     padding: 10px 20px;
-    width: 150px;
+    max-width: 150px;
     font-size: 1rem;
     border: none;
     border-radius: 8px;

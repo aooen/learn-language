@@ -66,6 +66,20 @@
       return bValue - aValue;
     });
   }
+
+  async function makeQuizSet() {
+    const res = await client.quizSet.$post({ json: { wordlistId: Number(wordlistId) } });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        goto(`/quizzes/${data.quizSetId}`);
+        return;
+      }
+    }
+
+    alert('퀴즈 세트 생성에 실패했습니다.');
+  }
 </script>
 
 <h1 class="title">📚 수집된 단어 리스트</h1>
@@ -73,6 +87,7 @@
 {#if words.length > 0}
   <div class="button-group">
     <button class="delete-btn" onclick={deleteSelectedWords}>선택 삭제</button>
+    <button class="media-btn" onclick={makeQuizSet}>퀴즈 만들기</button>
     {#if wordlist?.sourceType === SiteType.Youtube}
       <button class="media-btn" onclick={() => goto(`/wordlist/${wordlistId}/media`)}>
         🎥 영상과 함께 보기
