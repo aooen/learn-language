@@ -70,8 +70,15 @@ export async function prepareBinaries() {
   }
 }
 
-export async function getYoutubeSubtitle(_locale: string, url: string) {
+export async function getYoutubeSubtitle(_locale: string, id: string) {
   const locale = _locale.split('-')[0] ?? 'en';
+  const fileName = `${id}.${locale}.vtt`;
+
+  let file = await Bun.file(path.join(vendorFolderName, fileName));
+  if (await file.exists()) {
+    return await file.text();
+  }
+
   const ytdlpFile = path.join(vendorFolderName, ytdlpName);
   const proc = Bun.spawn(
     [
@@ -83,13 +90,13 @@ export async function getYoutubeSubtitle(_locale: string, url: string) {
       '--retries',
       '20',
       '-o',
-      'temp',
-      url,
+      id,
+      id,
     ],
     { cwd: vendorFolderName },
   );
   await proc.exited;
 
-  const file = await Bun.file(path.join(vendorFolderName, `temp.${locale}.vtt`));
+  file = await Bun.file(path.join(vendorFolderName, fileName));
   return await file.text();
 }

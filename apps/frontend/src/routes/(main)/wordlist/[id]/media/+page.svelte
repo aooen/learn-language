@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import clsx from 'clsx';
-  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { client } from '$lib/utils/api';
   import { SiteType } from '@learn-language/shared/utils/siteType';
+  import { getYoutubeId } from '@learn-language/shared/utils/youtube';
 
   type SubtitleItem = Awaited<
     ReturnType<Awaited<ReturnType<(typeof client.mediaInfo)[':wordlistId']['$get']>>['json']>
@@ -44,32 +44,8 @@
         return;
       }
 
-      /**
-       * Extract video ID from different YouTube URL formats:
-       * - https://www.youtube.com/watch?v=-4GmbBoYQjE
-       * - https://www.youtube.com/watch?v=-4GmbBoYQjE&t=2
-       * - https://youtu.be/-4GmbBoYQjE
-       * - https://youtu.be/-4GmbBoYQjE?t=2
-       */
-      const videoId = (() => {
-        let matches;
-
-        // For youtu.be format
-        if (fullUrl.includes('youtu.be')) {
-          matches = fullUrl.match(/youtu\.be\/([^?&]+)/);
-          if (matches) return matches[1];
-        }
-
-        // For youtube.com format
-        matches = fullUrl.match(/[?&]v=([^?&]+)/);
-        if (matches) return matches[1];
-
-        // If no match found, return the original URL (fallback)
-        return fullUrl;
-      })();
-
       player = new window.YT.Player(VIDEO_CONTAINER_ID, {
-        videoId,
+        videoId: getYoutubeId(fullUrl),
         playerVars: { autoplay: 0 },
         events: {
           onReady: handlePlayerReady,
