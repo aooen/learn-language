@@ -26,19 +26,30 @@
     }
   }
 
-  onMount(fetchQuizSets);
+  onMount(() => {
+    fetchQuizSets();
+  });
+
+  // 단어장 삭제
+  async function deleteQuizSet(id: number) {
+    await client.quizSet[':id'].$delete({ param: { id: String(id) } });
+    await fetchQuizSets();
+  }
 </script>
 
 {#if errorMsg}
-  <div class="error">{errorMsg}</div>
+  <div class="info">{errorMsg}</div>
 {:else if quizSets.length === 0}
-  <div>퀴즈 세트가 없습니다. 단어장에서 퀴즈 세트를 만들어보세요.</div>
+  <div class="info">퀴즈 세트가 없습니다. 단어장에서 퀴즈 세트를 만들어보세요.</div>
 {:else}
   <ul>
     {#each quizSets as set (set.id)}
       <li>
-        <a class="title" href={`/quizzes/${set.id}`}>QuizSet #{set.id}</a>
-        <a class="wordlistLink" href={`/wordlist/${set.wordlistId}`}>단어장</a>
+        <div>
+          <a class="title" href={`/quizzes/${set.id}`}>QuizSet #{set.id}</a>
+          <a class="wordlistLink" href={`/wordlist/${set.wordlistId}`}>단어장</a>
+        </div>
+        <button class="delete" onclick={() => deleteQuizSet(set.id)}>✖</button>
       </li>
     {/each}
   </ul>
@@ -46,6 +57,10 @@
 
 <style lang="scss">
   @use 'sass:color';
+
+  .info {
+    text-align: center;
+  }
 
   ul {
     list-style: none;
@@ -62,6 +77,7 @@
     padding: 20px 28px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     transition: background 0.2s;
 
     .title {
@@ -81,6 +97,18 @@
     .wordlistLink {
       color: #64748b;
       font-size: 1rem;
+    }
+
+    .delete {
+      width: 4px;
+      min-width: 4px;
+      padding: 2px 0;
+      font-size: 1rem;
+      background: none;
+      color: #ef4444;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
     }
 
     &:hover {

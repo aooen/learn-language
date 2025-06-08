@@ -196,11 +196,6 @@
     border: none;
     cursor: pointer;
     border-radius: 4px;
-    transition: background 0.15s;
-
-    &:hover {
-      background: #fee2e2;
-    }
   }
 
   .add-button {

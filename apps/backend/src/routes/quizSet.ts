@@ -77,6 +77,17 @@ const app = new Hono<Env>()
     } catch {}
     throw new HTTPException(404, { message: 'Not found quizId' });
   })
+  .delete('/:id', async (c) => {
+    const userId = c.get('userId');
+    const quizSetId = c.req.param('id');
+    try {
+      await db
+        .delete(quizSetTable)
+        .where(and(eq(quizSetTable.id, Number(quizSetId)), eq(quizSetTable.maker, userId)));
+      return c.json({ success: true });
+    } catch {}
+    throw new HTTPException(404, { message: 'Not found quizId' });
+  })
   .post(
     '/',
     zValidator(
