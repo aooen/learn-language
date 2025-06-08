@@ -1,0 +1,28 @@
+FROM oven/bun:latest AS builder
+WORKDIR /app
+
+COPY bun.lock ./
+COPY package.json ./
+COPY apps/backend ./apps/backend
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/shared/package.json ./packages/shared/
+COPY deploy/.env.frontend ./apps/frontend/.env.local
+
+RUN bun install
+
+COPY apps/backend ./apps/backend
+COPY apps/frontend ./apps/frontend
+COPY packages/shared ./packages/shared
+
+RUN bun run build:backend
+RUN bun run build:frontend
+
+
+FROM oven/bun:latest
+WORKDIR /app
+
+COPY --from=builder /app/apps/frontend/build ./
+
+EXPOSE 3000
+
+CMD ["bun", "run", "index.js"]

@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mariadb:11.7
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: '*****MUST_CHANGE*****'
+      MARIADB_DATABASE: learn-language
+      TZ: Asia/Seoul
+    volumes:
+      - db:/var/lib/mysql:Z
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    depends_on:
+      - db
+    restart: always
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - db
+    restart: always
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - 80:80
+    depends_on:
+      - backend
+      - frontend
+    restart: always
+
+volumes:
+  db:

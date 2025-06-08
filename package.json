@@ -3,9 +3,12 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "start:backend": "bun --filter backend start",
     "dev": "bun --filter '*' dev",
     "dev:backend": "bun --filter backend dev",
-    "dev:frontend": "bun --filter frontend dev"
+    "dev:frontend": "bun --filter frontend dev",
+    "build:backend": "bun --filter backend build",
+    "build:frontend": "bun --filter frontend build"
   },
   "workspaces": [
     "apps/*",
