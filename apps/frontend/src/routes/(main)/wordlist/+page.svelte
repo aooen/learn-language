@@ -107,7 +107,7 @@
     {/each}
   </ul>
 
-  <button class="add-button" onclick={() => (showInput = true)}>+ 단어장 추가</button>
+  <!-- <button class="add-button" onclick={() => (showInput = true)}>+ 단어장 추가</button> -->
 </div>
 
 <!-- 단어장 추가 모달 -->
@@ -198,18 +198,18 @@
     border-radius: 4px;
   }
 
-  .add-button {
-    margin-top: 16px;
-    display: block;
-    width: 100%;
-    padding: 10px 0;
-    background-color: #3b82f6;
-    border: none;
-    color: white;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-  }
+  // .add-button {
+  //   margin-top: 16px;
+  //   display: block;
+  //   width: 100%;
+  //   padding: 10px 0;
+  //   background-color: #3b82f6;
+  //   border: none;
+  //   color: white;
+  //   border-radius: 6px;
+  //   font-size: 1rem;
+  //   cursor: pointer;
+  // }
 
   .overlay {
     all: unset;
