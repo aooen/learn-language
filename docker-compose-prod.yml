@@ -7,7 +7,7 @@ services:
       MARIADB_DATABASE: learn-language
       TZ: Asia/Seoul
     volumes:
-      - db:/var/lib/mysql:Z
+      - db:/var/lib/mysql
 
   backend:
     build:
@@ -16,6 +16,8 @@ services:
     depends_on:
       - db
     restart: always
+    volumes:
+      - uploads:/app/apps/backend/uploads
 
   frontend:
     build:
@@ -38,3 +40,4 @@ services:
 
 volumes:
   db:
+  uploads:

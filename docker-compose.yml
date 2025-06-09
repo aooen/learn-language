@@ -9,7 +9,7 @@ services:
       MARIADB_DATABASE: learn-language
       TZ: Asia/Seoul
     volumes:
-      - db:/var/lib/mysql:Z
+      - db:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin:latest
