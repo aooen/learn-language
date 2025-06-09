@@ -43,6 +43,13 @@
       "when": 1749390440001,
       "tag": "0005_naive_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1749504594314,
+      "tag": "0006_low_krista_starr",
+      "breakpoints": true
     }
   ]
 }
