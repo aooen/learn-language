@@ -2,28 +2,20 @@
   import { type Component, onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { client } from '$lib/utils/api';
   import clsx from 'clsx';
   import ArchiveOutlineIcon from 'virtual:icons/ion/archive-outline';
   import CheckboxOutlineIcon from 'virtual:icons/ion/checkbox-outline';
   import FileTrayFullOutlineIcon from 'virtual:icons/ion/file-tray-full-outline';
   import PeopleOutlineIcon from 'virtual:icons/ion/people-outline';
-  import { updateJwt } from '$lib/stores/auth.svelte';
-  import { userStore } from '$lib/stores/user.svelte';
+  import { getUserInfo, userStore } from '$lib/stores/user.svelte';
   import { getImageUrl } from '$lib/utils/user';
 
   let { children } = $props();
 
-  onMount(async () => {
-    const res = await client.user.me.$get();
-    if (!res.ok) {
-      updateJwt(null);
+  onMount(() => {
+    getUserInfo().catch(() => {
       return goto('/');
-    }
-    const json = await res.json();
-    userStore.user = json.user;
-    userStore.quizCount = json.quizCount;
-    updateJwt(json.token);
+    });
   });
 
   const menu = $derived.by(() => {

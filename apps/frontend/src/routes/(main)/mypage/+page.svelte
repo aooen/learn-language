@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getLangText } from '$lib/constants/lang';
   import { client } from '$lib/utils/api';
   import { getImageUrl } from '$lib/utils/user';
   import { updateJwt } from '$lib/stores/auth.svelte';
-  import { userStore } from '$lib/stores/user.svelte';
+  import { getUserInfo, userStore } from '$lib/stores/user.svelte';
 
   let user = $derived(userStore.user);
 
@@ -17,6 +18,12 @@
   let selectedFile = $state<File | null>(null);
   let preview = $state<string | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
+
+  onMount(() => {
+    getUserInfo().catch(() => {
+      return goto('/');
+    });
+  });
 
   function showMsg(message: string) {
     msg = message;
