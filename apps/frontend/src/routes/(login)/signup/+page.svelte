@@ -2,15 +2,20 @@
   import { goto } from '$app/navigation';
   import { authStore, signup } from '$lib/stores/auth.svelte';
   import { onMount } from 'svelte';
+  import termsContent from './terms.txt?raw';
+  import privacyContent from './privacy.txt?raw';
 
   const Stage = {
-    Username: 0,
-    Password: 1,
-    MotherLang: 2,
-    TargetLang: 3,
+    Terms: 0,
+    Username: 1,
+    Password: 2,
+    MotherLang: 3,
+    TargetLang: 4,
   } as const;
 
-  let stage = $state<(typeof Stage)[keyof typeof Stage]>(Stage.Username);
+  let stage = $state<(typeof Stage)[keyof typeof Stage]>(Stage.Terms);
+  let acceptTerms = $state(false);
+  let acceptPrivacy = $state(false);
   let username = $state('');
   let password = $state('');
   let passwordConfirm = $state('');
@@ -25,6 +30,13 @@
 
   async function submitSignup(e: Event) {
     e.preventDefault();
+
+    if (stage === Stage.Terms) {
+      if (!acceptTerms || !acceptPrivacy) {
+        alert('이용약관 및 개인정보 처리방침에 동의해주세요.');
+        return;
+      }
+    }
 
     if (stage === Stage.Password) {
       if (password !== passwordConfirm) {
@@ -54,9 +66,23 @@
 </script>
 
 <div class="wrapper">
-  <h1>ll.me.kr</h1>
+  <h1><a href="/">ll.me.kr</a></h1>
   <h2>회원가입</h2>
   <form onsubmit={submitSignup} class="signup-form">
+    {#if stage === Stage.Terms}
+      <textarea rows="5">{termsContent}</textarea>
+      <div>
+        <input id="terms" type="checkbox" bind:checked={acceptTerms} required />
+        <label for="terms">이용약관에 동의합니다.</label>
+      </div>
+
+      <textarea rows="5">{privacyContent}</textarea>
+      <div>
+        <input id="privacy" type="checkbox" bind:checked={acceptPrivacy} required />
+        <label for="privacy">개인정보 처리방침에 동의합니다.</label>
+      </div>
+    {/if}
+
     {#if stage === Stage.Username}
       <div class="form-group">
         <label for="username">아이디</label>
@@ -120,6 +146,11 @@
       text-align: center;
       margin: 0;
       font-weight: lighter;
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
     }
 
     h2 {
