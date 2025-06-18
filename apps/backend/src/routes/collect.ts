@@ -82,6 +82,11 @@ const app = new Hono<Env>()
           });
 
           const stemCount = await countStem(data.text);
+          if (Object.keys(stemCount).length === 0) {
+            await updateCollectingState({ error: "It seems not 'en-US' media" });
+            throw new HTTPException(400, { message: "It seems not 'en-US' media" });
+          }
+
           const meaningMap = await requestMeaning(Object.keys(stemCount));
           const frequencyMap = await getWordFrequencies(locale, Object.keys(stemCount));
 
@@ -119,7 +124,16 @@ const app = new Hono<Env>()
           });
 
           if (sourceType === SiteType.Youtube) {
-            const vttText = await getYoutubeSubtitle(locale, getYoutubeId(data.url));
+            let vttText = '';
+            try {
+              vttText = await getYoutubeSubtitle(locale, getYoutubeId(data.url));
+            } catch (e) {
+              await updateCollectingState({ error: "There is no 'en-US' subtitle in the media" });
+              throw new HTTPException(400, {
+                message: "There is no 'en-US' subtitle in the media",
+              });
+            }
+
             const subtitles = parseWebVTT(vttText);
             const stemCount = await countStem(subtitles.map((s) => s.subtitle));
 
@@ -161,11 +175,7 @@ const app = new Hono<Env>()
           tx.rollback();
         }
 
-        await db
-          .update(collectingTable)
-          .set({ error: 'Invalid collecting target' })
-          .where(eq(collectingTable.id, collectingId));
-
+        await updateCollectingState({ error: 'Invalid collecting target' });
         throw new HTTPException(400, { message: 'Invalid collecting target' });
       });
     },

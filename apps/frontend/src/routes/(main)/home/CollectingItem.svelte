@@ -73,9 +73,6 @@
     &.has-error {
       border-color: #ff6b6b;
       background-color: #fffafa;
-      .item-error {
-        animation: pulse-error 1.5s infinite;
-      }
     }
   }
 
@@ -138,7 +135,6 @@
     color: #cc0000;
     padding: 10px 15px;
     border-radius: 8px;
-    border: 1px solid #ff6b6b;
   }
 
   .error-icon {
@@ -186,21 +182,6 @@
       color: #ef4444;
       font-size: 1rem;
       cursor: pointer;
-    }
-  }
-
-  @keyframes pulse-error {
-    0% {
-      transform: scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scale(1.02);
-      opacity: 0.9;
-    }
-    100% {
-      transform: scale(1);
-      opacity: 1;
     }
   }
 </style>
