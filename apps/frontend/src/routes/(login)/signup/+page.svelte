@@ -130,6 +130,11 @@
       {/if}
     </button>
   </form>
+
+  <footer>
+    <a href="https://github.com/aooen/learn-language" target="_blank">GitHub</a>
+    | 김학연 정주현 이지현 김준석 하유경
+  </footer>
 </div>
 
 <style lang="scss">
@@ -198,6 +203,19 @@
 
       &:hover {
         background-color: color.adjust(#4682b4, $lightness: -10%);
+      }
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      color: #444;
+      font-size: 0.8rem;
+      text-align: center;
+
+      a {
+        color: #444;
       }
     }
   }

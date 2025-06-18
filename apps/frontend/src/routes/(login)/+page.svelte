@@ -43,6 +43,11 @@
     <button type="submit" class="login-button">로그인</button>
     <a class="signup-link" href="/signup">회원가입</a>
   </form>
+
+  <footer>
+    <a href="https://github.com/aooen/learn-language" target="_blank">GitHub</a>
+    | 김학연 정주현 이지현 김준석 하유경
+  </footer>
 </div>
 
 <style lang="scss">
@@ -117,6 +122,19 @@
       font-size: 16px;
       text-decoration: none;
       cursor: pointer;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      color: #444;
+      font-size: 0.8rem;
+      text-align: center;
+
+      a {
+        color: #444;
+      }
     }
   }
 </style>
