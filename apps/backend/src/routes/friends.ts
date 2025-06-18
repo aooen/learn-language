@@ -1,24 +1,40 @@
 import { Hono } from 'hono';
+import { eq, and, count, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '~/utils/db';
 import { friendsTable } from '~/schemas/friends';
 import { userTable } from '~/schemas/user';
 import { quizSetLogTable } from '~/schemas/quizSetLog';
 import { zValidator } from '~/utils/validator-wrapper';
-import { eq, and, count } from 'drizzle-orm';
 import type { Env } from '../types/hono.ts';
 
 const app = new Hono<Env>()
   // 친구 목록 조회 (전체 목록)
   .get('/', async (c) => {
     const userId = c.get('userId');
-    const results = await db
-      .select({ id: userTable.id, username: userTable.username, image: userTable.image })
+
+    const friends = await db
+      .select({
+        id: userTable.id,
+        username: userTable.username,
+        image: userTable.image,
+        isRequesting: friendsTable.isRequesting,
+      })
       .from(friendsTable)
       .innerJoin(userTable, eq(friendsTable.friendId, userTable.id))
       .where(eq(friendsTable.userId, userId));
 
-    return c.json({ friends: results });
+    const requesters = await db
+      .select({
+        id: userTable.id,
+        username: userTable.username,
+        image: userTable.image,
+      })
+      .from(friendsTable)
+      .innerJoin(userTable, eq(friendsTable.userId, userTable.id))
+      .where(and(eq(friendsTable.friendId, userId), eq(friendsTable.isRequesting, true)));
+
+    return c.json({ friends, requesters });
   })
 
   // 친구 추가
@@ -40,9 +56,29 @@ const app = new Hono<Env>()
     const [{ affectedRows }] = await db.insert(friendsTable).values({
       userId,
       friendId: friend.id,
+      isRequesting: true,
     });
 
-    // TODO: 친구 추가 수락 기능 추가
+    return c.json({ success: affectedRows > 0 });
+  })
+
+  // 친구 수락
+  .post('/accept', zValidator('json', z.object({ requesterId: z.string() })), async (c) => {
+    const userId = c.get('userId');
+    const { requesterId } = c.req.valid('json');
+
+    const [{ affectedRows }] = await db
+      .update(friendsTable)
+      .set({ isRequesting: false })
+      .where(and(eq(friendsTable.userId, Number(requesterId)), eq(friendsTable.friendId, userId)));
+
+    if (affectedRows > 0) {
+      await db.insert(friendsTable).values({
+        userId,
+        friendId: Number(requesterId),
+        isRequesting: false,
+      });
+    }
 
     return c.json({ success: affectedRows > 0 });
   })
@@ -53,7 +89,12 @@ const app = new Hono<Env>()
     const friendId = Number(c.req.param('friendId'));
     const [{ affectedRows }] = await db
       .delete(friendsTable)
-      .where(and(eq(friendsTable.userId, userId), eq(friendsTable.friendId, friendId)));
+      .where(
+        or(
+          and(eq(friendsTable.userId, userId), eq(friendsTable.friendId, friendId)),
+          and(eq(friendsTable.userId, friendId), eq(friendsTable.friendId, userId)),
+        ),
+      );
 
     return c.json({ success: affectedRows > 0 });
   })
@@ -62,7 +103,16 @@ const app = new Hono<Env>()
   .get('/:friendId', async (c) => {
     const friendId = Number(c.req.param('friendId'));
 
-    // TODO: 친구 목록에 있는 사람인지 확인
+    const { count: friendshipRowCount } = (
+      await db
+        .select({ count: count() })
+        .from(friendsTable)
+        .where(and(eq(friendsTable.friendId, friendId), eq(friendsTable.isRequesting, false)))
+    )[0]!;
+
+    if (friendshipRowCount === 0) {
+      return c.text('User not found', 404);
+    }
 
     const [user] = await db
       .select({

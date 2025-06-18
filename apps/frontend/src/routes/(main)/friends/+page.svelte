@@ -1,11 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import clsx from 'clsx';
   import { goto } from '$app/navigation';
-  import type { User } from '$lib/types/user';
   import { client } from '$lib/utils/api';
   import { getImageUrl } from '$lib/utils/user';
 
-  let friends = $state<Pick<User, 'id' | 'username' | 'image'>[]>([]);
+  type Friend = Awaited<
+    ReturnType<Awaited<ReturnType<typeof client.friends.$get>>['json']>
+  >['friends'][number];
+  type Requester = Awaited<
+    ReturnType<Awaited<ReturnType<typeof client.friends.$get>>['json']>
+  >['requesters'][number];
+
+  let friends = $state<Friend[]>([]);
+  let requesters = $state<Requester[]>([]);
   let error = $state('');
   let newFriendUsername = $state('');
 
@@ -14,6 +22,7 @@
       const res = await client.friends.$get();
       const data = await res.json();
       friends = data.friends;
+      requesters = data.requesters;
     } catch {
       error = '친구 목록을 불러오는 데 실패했습니다';
     }
@@ -58,6 +67,20 @@
     }
   }
 
+  async function acceptFriend(id: number) {
+    error = '';
+    try {
+      const res = await client.friends.accept.$post({ json: { requesterId: String(id) } });
+      if (res.ok) {
+        await fetchFriends();
+      } else {
+        error = await res.text();
+      }
+    } catch {
+      error = '친구 수락에 실패했습니다';
+    }
+  }
+
   function viewFriend(id: number) {
     goto(`/friends/${id}`);
   }
@@ -74,7 +97,7 @@
     {#each friends as friend, index (friend.id)}
       <div class="friend-card">
         <div
-          class="left"
+          class={clsx('left', { isRequesting: friend.isRequesting })}
           tabindex={index}
           role="button"
           aria-label={`${friend.username} 정보 보기`}
@@ -86,15 +109,32 @@
           }}
         >
           <img class="avatar" src={getImageUrl(friend.image)} alt="프로필 이미지" />
-          <span>{friend.username}</span>
+          <span>{friend.username}{friend.isRequesting ? '에게 친구 요청함' : ''}</span>
         </div>
-        <button class="delete-button" onclick={() => removeFriend(friend.id)}>삭제</button>
+        <button class="action-button" onclick={() => removeFriend(friend.id)}>
+          {friend.isRequesting ? '요청 취소' : '삭제'}
+        </button>
       </div>
     {/each}
   </div>
 
   {#if friends.length === 0}
     <p class="empty">아직 친구가 없습니다.</p>
+  {/if}
+
+  {#if requesters.length > 0}
+    <h3>친구 요청</h3>
+    <div class="friend-list">
+      {#each requesters as requester (requester.id)}
+        <div class="friend-card">
+          <div class="left isRequesting">
+            <img class="avatar" src={getImageUrl(requester.image)} alt="프로필 이미지" />
+            <span>{requester.username}</span>
+          </div>
+          <button class="action-button" onclick={() => acceptFriend(requester.id)}>수락</button>
+        </div>
+      {/each}
+    </div>
   {/if}
 
   <div class="add-form">
@@ -144,7 +184,10 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    cursor: pointer;
+
+    &:not(.isRequesting) {
+      cursor: pointer;
+    }
   }
 
   .avatar {
@@ -155,7 +198,7 @@
     border: 1px solid #ccc;
   }
 
-  .delete-button {
+  .action-button {
     padding: 0.4rem 0.75rem;
     font-size: 0.9rem;
     border: 1px solid #5a78f0;
@@ -175,6 +218,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-top: 2rem;
   }
 
   .add-input {
@@ -205,6 +249,5 @@
 
   .empty {
     color: #888;
-    margin-bottom: 2rem;
   }
 </style>
