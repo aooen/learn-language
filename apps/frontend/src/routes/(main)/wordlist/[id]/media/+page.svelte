@@ -173,7 +173,12 @@
         <div class="loading-message">지원하지 않는 미디어입니다.</div>
       {/if}
 
-      <div class="subtitle-container" bind:this={subtitleContainer} onwheel={handleScroll}>
+      <div
+        class="subtitle-container"
+        bind:this={subtitleContainer}
+        onwheel={handleScroll}
+        ontouchmove={handleScroll}
+      >
         {#if showWordOverlay}
           <div
             class="overlayOff"
